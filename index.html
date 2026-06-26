@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EzCompile - Trình Biên Dịch Đa Ngôn Ngữ</title>
+    <title>EzCompile - Advanced Compiler</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,7 +14,6 @@
             width: 100vw;
             overflow: hidden;
         }
-        /* Custom scrollbar siêu mảnh chuẩn VS Code */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -36,31 +35,34 @@
     <header class="bg-[#1e293b] px-6 py-3 flex justify-between items-center border-b border-gray-700 shadow-md h-[60px] flex-shrink-0 z-10">
         <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2 font-bold text-xl tracking-wider text-blue-400">
-                <i class="fa-solid fa-rocket text-xl text-blue-500 animate-pulse"></i>
+                <i class="fa-solid fa-code text-xl text-blue-500 animate-pulse"></i>
                 <span>EzCompile</span>
             </div>
             
             <div class="relative">
                 <select id="language-select" onchange="changeLanguage()" class="bg-[#334155] border border-gray-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white outline-none cursor-pointer hover:bg-[#475569] transition">
-                    <option value="html">HTML/CSS/JS (Web Front-end)</option>
+                    <option value="html">HTML/CSS/JS (Web)</option>
                     <option value="python">Python 3</option>
                     <option value="cpp">C++ (GCC)</option>
                     <option value="c">C (GCC)</option>
                     <option value="java">Java (JDK)</option>
-                    <option value="javascript">JavaScript (Node.js)</option>
+                    <option value="javascript">JavaScript (Node)</option>
                 </select>
             </div>
         </div>
 
-        <div class="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-950/50 px-3 py-1.5 rounded-lg border border-emerald-800">
-            <i class="fa-solid fa-bolt text-[10px] mr-1 text-emerald-400"></i>
-            <span>GitHub Pages: Live Connection</span>
-        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleStdinModal()" id="stdin-btn" class="hidden bg-[#334155] hover:bg-[#475569] border border-gray-600 text-gray-200 font-medium text-xs px-3 py-2 rounded-lg transition flex items-center space-x-1.5 cursor-pointer">
+                <i class="fa-solid fa-keyboard text-amber-400"></i>
+                <span>Nhập dữ liệu Test (STDIN)</span>
+                <span id="stdin-status-dot" class="w-2 h-2 rounded-full bg-gray-500 ml-1"></span>
+            </button>
 
-        <button onclick="compileAndRun()" id="run-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg transition flex items-center space-x-2 cursor-pointer shadow-lg shadow-blue-900/30">
-            <i class="fa-solid fa-play"></i>
-            <span>RUN</span>
-        </button>
+            <button onclick="compileAndRun()" id="run-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg transition flex items-center space-x-2 cursor-pointer shadow-lg shadow-blue-900/30">
+                <i class="fa-solid fa-play"></i>
+                <span>RUN</span>
+            </button>
+        </div>
     </header>
 
     <main class="flex flex-1 flex-row overflow-hidden h-[calc(100vh-60px)] w-full">
@@ -71,61 +73,72 @@
                     <span>Source Code</span>
                     <span id="lang-indicator" class="text-blue-400 font-mono text-[11px] bg-blue-950 px-2 py-0.5 rounded">html</span>
                 </div>
-                
-                <div class="flex space-x-2">
-                    <button onclick="downloadCodeFile()" class="text-gray-400 hover:text-blue-400 font-medium text-xs flex items-center space-x-1 transition cursor-pointer bg-[#334155]/40 px-2 py-1 rounded border border-gray-700/60 hover:border-blue-500/50">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Tải Code</span>
-                    </button>
-                </div>
+                <button onclick="downloadCodeFile()" class="text-gray-400 hover:text-blue-400 text-xs flex items-center space-x-1 transition cursor-pointer bg-[#334155]/30 px-2 py-1 rounded border border-gray-700/50">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Tải Code</span>
+                </button>
             </div>
-            <div class="flex-1 w-full overflow-hidden bg-transparent p-2">
+            <div class="flex-1 w-full overflow-hidden p-2">
                 <textarea id="editor" class="w-full h-full p-2 bg-transparent font-mono text-sm text-gray-200 outline-none resize-none leading-relaxed overflow-y-auto select-text" spellcheck="false"></textarea>
             </div>
         </div>
 
-        <div id="right-panel" class="w-1/2 flex flex-col bg-[#0b0f19] h-full overflow-hidden">
+        <div class="w-1/2 flex flex-col bg-[#020617] h-full overflow-hidden relative">
+            <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 h-[40px] flex-shrink-0 flex justify-between items-center">
+                <span>Terminal Output</span>
+                <div id="runtime-badge" class="hidden text-[11px] font-mono font-bold px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">
+                    0 ms
+                </div>
+            </div>
+            
             <div id="web-preview-container" class="w-full h-full bg-white hidden">
                 <iframe id="web-preview" class="w-full h-full border-none m-0 p-0"></iframe>
             </div>
 
-            <div id="program-console-container" class="flex flex-col h-full w-full overflow-hidden">
+            <div id="terminal-container" class="flex-1 p-4 font-mono text-sm overflow-y-auto text-gray-300">
+                <div id="interactive-prompt-box" class="hidden items-center space-x-2 mb-2 bg-[#1e293b]/30 p-2 rounded border border-gray-800">
+                    <span class="text-amber-400 animate-pulse font-bold">👉 Nhập dữ liệu cin trực tiếp tại đây:</span>
+                    <input type="text" id="terminal-inline-input" class="flex-1 bg-transparent border-b border-gray-600 outline-none text-white font-mono text-sm pb-0.5" placeholder="Nhập xong ấn nút RUN để gửi..." />
+                </div>
                 
-                <div class="h-1/3 flex flex-col border-b border-gray-800 bg-[#0f172a]/50">
-                    <div class="bg-[#1e293b]/40 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800/80 flex items-center h-[35px] flex-shrink-0">
-                        <span>STDIN (Input dữ liệu tùy chọn)</span>
-                    </div>
-                    <div class="flex-1 p-2 bg-[#020617]/40">
-                        <textarea id="stdin-input" class="w-full h-full p-2 bg-transparent font-mono text-sm text-gray-300 outline-none resize-none leading-normal overflow-y-auto select-text" placeholder="Nhập dữ liệu đầu vào cho chương trình tại đây nếu có (Ví dụ: dữ liệu cho hàm cin, input()...)" spellcheck="false"></textarea>
-                    </div>
-                </div>
+                <pre id="terminal-output" class="whitespace-pre-wrap select-text m-0 break-all">// Bấm nút RUN để biên dịch chương trình...</pre>
+            </div>
 
-                <div class="h-2/3 flex flex-col relative bg-[#020617]">
-                    <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 h-[40px] flex-shrink-0 flex items-center">
-                        <span>Output kết quả</span>
-                    </div>
-                    <div id="terminal-container" class="flex-1 p-4 font-mono text-sm overflow-y-auto text-gray-300">
-                        <pre id="terminal-output" class="whitespace-pre-wrap select-text m-0 break-all">// Viết code và nhấn nút RUN để chạy chương trình...</pre>
-                    </div>
-                    <div id="loader" class="absolute inset-0 bg-black/60 flex items-center justify-center space-x-3 hidden z-50">
-                        <div class="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span class="text-sm text-gray-300 font-medium">Đang thực thi mã nguồn trên Cloud...</span>
-                    </div>
-                </div>
-
+            <div id="loader" class="absolute inset-0 bg-black/60 flex items-center justify-center space-x-3 hidden z-50">
+                <div class="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-sm text-gray-300 font-medium">Đang chạy thuật toán trên Cloud...</span>
             </div>
         </div>
-
     </main>
+
+    <div id="stdin-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden transition-opacity duration-200">
+        <div class="bg-[#1e293b] border border-gray-700 w-[550px] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-700 flex justify-between items-center bg-[#111827]">
+                <h3 class="text-sm font-bold text-gray-200 flex items-center space-x-2">
+                    <i class="fa-solid fa-database text-blue-400"></i>
+                    <span>Cấu hình bộ Test dữ liệu (STDIN)</span>
+                </h3>
+                <button onclick="toggleStdinModal()" class="text-gray-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 flex-1">
+                <p class="text-xs text-gray-400 mb-2">Dán ma trận, chuỗi testcase lớn vào đây để đo tốc độ xử lý phần cứng (ms):</p>
+                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none leading-relaxed" placeholder="Ví dụ mẫu:\n5\n1 2 3 4 5" spellcheck="false"></textarea>
+            </div>
+            <div class="px-4 py-3 bg-[#111827] border-t border-gray-700 flex justify-end space-x-2">
+                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer text-gray-300">Xóa dữ liệu</button>
+                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md cursor-pointer text-white">Xác nhận Lưu</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const codeTemplates = {
-            html: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; text-align: center; background: #f0f4f8; padding-top: 50px; }\n    h1 { color: #1d4ed8; }\n  </style>\n</head>\n<body>\n  <h1>Hello From EzCompile!</h1>\n  <p>Hệ thống Web Sandbox đã sẵn sàng trên GitHub Pages.</p>\n</body>\n</html>`,
-            python: `print("Hello from Python 3!")\n\n# Thử nghiệm tính năng nhập dữ liệu STDIN:\n# name = input()\n# print("Xin chào " + name)`,
-            cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World từ C++!" << endl;\n    return 0;\n}`,
-            c: `#include <stdio.h>\n\nint main() {\n    printf("Hello World từ Ngôn ngữ C!\\n");\n    return 0;\n}`,
-            java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World từ Java!");\n    }\n}`,
-            javascript: `console.log("Hello World từ Node.js!");\nconst arr = [1, 2, 3, 4, 5];\nconsole.log("Mảng xử lý:", arr.map(x => x * 2));`
+            html: `<!DOCTYPE html>\n<html>\n<body>\n  <h1 style="color:blue; text-align:center;">EzCompile Live Pages</h1>\n</body>\n</html>`,
+            python: `import time\n\n# Nhập từ STDIN\nprint("Mời nhập tên của bạn:")\nname = input()\nprint(f"Xin chào {name}!")`,
+            cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cout << "Nhap so phan tu N: ";\n    cin >> n;\n    cout << "Gia tri binh phuong cua N la: " << n * n << endl;\n    return 0;\n}`,
+            c: `#include <stdio.h>\nint main() {\n    printf("Hello World!\\n");\n    return 0;\n}`,
+            java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello Java!");\n    }\n}`,
+            javascript: `console.log("Hello Node!");`
         };
 
         const fileNames = { python: 'main.py', cpp: 'main.cpp', c: 'main.c', java: 'Main.java', javascript: 'main.js' };
@@ -135,13 +148,19 @@
         const langSelect = document.getElementById('language-select');
         const langIndicator = document.getElementById('lang-indicator');
         const webContainer = document.getElementById('web-preview-container');
-        const consoleContainer = document.getElementById('program-console-container');
         const terminalContainer = document.getElementById('terminal-container');
         const terminalOutput = document.getElementById('terminal-output');
-        const stdinInput = document.getElementById('stdin-input');
         const loader = document.getElementById('loader');
+        const stdinBtn = document.getElementById('stdin-btn');
+        const runtimeBadge = document.getElementById('runtime-badge');
+        const promptBox = document.getElementById('interactive-prompt-box');
+        const inlineInput = document.getElementById('terminal-inline-input');
+        const stdinModal = document.getElementById('stdin-modal');
+        const modalStdinText = document.getElementById('modal-stdin-text');
+        const statusDot = document.getElementById('stdin-status-dot');
 
         let currentLang = 'html';
+        let savedStdinData = ""; 
         editor.value = codeTemplates[currentLang];
 
         function changeLanguage() {
@@ -151,13 +170,41 @@
             
             if(currentLang === 'html') {
                 webContainer.classList.remove('hidden');
-                consoleContainer.classList.add('hidden');
+                stdinBtn.classList.add('hidden');
+                runtimeBadge.classList.add('hidden');
+                promptBox.classList.add('hidden');
                 document.getElementById('web-preview').srcdoc = editor.value;
             } else {
                 webContainer.classList.add('hidden');
-                consoleContainer.classList.remove('hidden');
-                terminalOutput.innerText = `// Đã chuyển sang chế độ ${currentLang.toUpperCase()}. Bấm RUN để biên dịch.`;
+                stdinBtn.classList.remove('hidden');
+                runtimeBadge.classList.add('hidden');
+                promptBox.classList.remove('hidden');
+                terminalOutput.innerText = `// Hệ thống sẵn sàng. Nhập dữ liệu tương tác hoặc bấm RUN.`;
             }
+        }
+
+        function toggleStdinModal() {
+            stdinModal.classList.toggle('hidden');
+            if(!stdinModal.classList.contains('hidden')) {
+                modalStdinText.value = savedStdinData;
+            }
+        }
+
+        function saveStdin() {
+            savedStdinData = modalStdinText.value;
+            if(savedStdinData.trim() !== "") {
+                statusDot.className = "w-2 h-2 rounded-full bg-amber-500 ml-1 shadow-lg shadow-amber-500/50";
+            } else {
+                statusDot.className = "w-2 h-2 rounded-full bg-gray-500 ml-1";
+            }
+            stdinModal.classList.add('hidden');
+        }
+
+        function clearStdin() {
+            modalStdinText.value = "";
+            savedStdinData = "";
+            statusDot.className = "w-2 h-2 rounded-full bg-gray-500 ml-1";
+            stdinModal.classList.add('hidden');
         }
 
         function downloadCodeFile() {
@@ -168,20 +215,27 @@
             link.click();
         }
 
-        // ĐỒNG BỘ STDIN VÀ BÓC TÁCH KẾT QUẢ ĐẦY ĐỦ TỪ API
+        // BIÊN DỊCH CHƯƠNG TRÌNH VÀ TÍNH TOÁN HIỆU NĂNG THỜI GIAN (MS)
         async function compileAndRun() {
             const sourceCode = editor.value;
             if(currentLang === 'html') {
                 webContainer.classList.remove('hidden');
-                consoleContainer.classList.add('hidden');
                 document.getElementById('web-preview').srcdoc = sourceCode;
                 return;
             }
             
-            webContainer.classList.add('hidden');
-            consoleContainer.classList.remove('hidden');
             loader.classList.remove('hidden');
-            terminalOutput.innerText = "Đang biên dịch và xử lý dữ liệu đầu vào...";
+            runtimeBadge.classList.add('hidden');
+            terminalOutput.innerText = "Đang truyền tải và đo đạc hiệu năng thuật toán...";
+
+            // Xác định input ưu tiên: Nếu có cấu hình testcase lớn thì lấy testcase, không thì lấy text gõ trực tiếp trong ô terminal
+            let finalInput = savedStdinData;
+            if(!finalInput || finalInput.trim() === "") {
+                finalInput = inlineInput.value;
+            }
+
+            // Đánh dấu thời gian bắt đầu (mốc thời gian micro-giây của trình duyệt)
+            const startTime = performance.now();
 
             try {
                 const response = await fetch("https://api.codex.jaagrav.in", {
@@ -192,25 +246,33 @@
                     body: new URLSearchParams({
                         language: codexLanguages[currentLang],
                         code: sourceCode,
-                        input: stdinInput.value // Gửi dữ liệu từ ô nhập STDIN lên Cloud Server
+                        input: finalInput
                     })
                 });
 
                 const data = await response.json();
                 
+                // Tính toán khoảng thời gian hoàn tất xử lý (ms)
+                const endTime = performance.now();
+                const totalExecutionTime = Math.round(endTime - startTime);
+
                 let output = "";
-                if (data.data) output += data.data; // Lấy kết quả output chuẩn trả về
-                if (data.error) output += data.error; // Lấy thông tin lỗi cú pháp nếu có
+                if (data.data) output += data.data;
+                if (data.error) output += data.error;
                 
                 if (!output || output.trim() === "") {
-                    output = "Chương trình thực thi hoàn tất (Không có kết quả xuất dữ liệu ra màn hình).";
+                    output = "Chương trình chạy xong (Không có dữ liệu xuất).";
                 }
                 
                 terminalOutput.innerText = output;
 
+                // Hiển thị huy hiệu đo thời gian xử lý (ms)
+                runtimeBadge.innerText = `${totalExecutionTime} ms`;
+                runtimeBadge.classList.remove('hidden');
+
             } catch (error) {
                 console.error(error);
-                terminalOutput.innerText = "[Lỗi hệ thống] Không thể tải kết quả từ máy chủ Cloud. Vui lòng bấm RUN lại.";
+                terminalOutput.innerText = "[Lỗi kết nối] Không lấy được dữ liệu hiệu năng thuật toán.";
             } finally {
                 loader.classList.add('hidden');
                 terminalContainer.scrollTop = terminalContainer.scrollHeight;
