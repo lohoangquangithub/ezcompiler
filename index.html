@@ -52,12 +52,6 @@
         </div>
 
         <div class="flex items-center space-x-3">
-            <button onclick="toggleStdinModal()" id="stdin-btn" class="hidden bg-[#334155] hover:bg-[#475569] border border-gray-600 text-gray-200 font-medium text-xs px-3 py-2 rounded-lg transition flex items-center space-x-1.5 cursor-pointer">
-                <i class="fa-solid fa-keyboard text-amber-400"></i>
-                <span>Nhập dữ liệu Test (STDIN)</span>
-                <span id="stdin-status-dot" class="w-2 h-2 rounded-full bg-gray-500 ml-1"></span>
-            </button>
-
             <button onclick="compileAndRun()" id="run-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg transition flex items-center space-x-2 cursor-pointer shadow-lg shadow-blue-900/30">
                 <i class="fa-solid fa-play"></i>
                 <span>RUN</span>
@@ -113,26 +107,6 @@
         </div>
     </main>
 
-    <div id="stdin-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
-        <div class="bg-[#1e293b] border border-gray-700 w-[550px] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-700 flex justify-between items-center bg-[#111827]">
-                <h3 class="text-sm font-bold text-gray-200 flex items-center space-x-2">
-                    <i class="fa-solid fa-database text-blue-400"></i>
-                    <span>Cấu hình dữ liệu Test xử lý (ms)</span>
-                </h3>
-                <button onclick="toggleStdinModal()" class="text-gray-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-4 flex-1">
-                <p class="text-xs text-gray-400 mb-2">Dán ma trận hoặc bộ dữ liệu testcase lớn vào đây để đo tốc độ xử lý phần cứng:</p>
-                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none leading-relaxed" placeholder="Ví dụ:\n5\n10 20 30 40 50" spellcheck="false"></textarea>
-            </div>
-            <div class="px-4 py-3 bg-[#111827] border-t border-gray-700 flex justify-end space-x-2">
-                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer text-gray-300">Xóa</button>
-                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md cursor-pointer text-white">Lưu cấu hình</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const codeTemplates = {
             html: `<!DOCTYPE html>\n<html>\n<body>\n  <h1 style="color:blue; text-align:center;">EzCompile Live Pages</h1>\n</body>\n</html>`,
@@ -154,16 +128,11 @@
         const terminalContainer = document.getElementById('terminal-container');
         const terminalOutput = document.getElementById('terminal-output');
         const loader = document.getElementById('loader');
-        const stdinBtn = document.getElementById('stdin-btn');
         const runtimeBadge = document.getElementById('runtime-badge');
         const promptBox = document.getElementById('interactive-prompt-box');
         const inlineInput = document.getElementById('terminal-inline-input');
-        const stdinModal = document.getElementById('stdin-modal');
-        const modalStdinText = document.getElementById('modal-stdin-text');
-        const statusDot = document.getElementById('stdin-status-dot');
 
         let currentLang = 'html';
-        let savedStdinData = ""; 
         editor.value = codeTemplates[currentLang];
 
         function changeLanguage() {
@@ -173,39 +142,18 @@
             inlineInput.value = ""; 
 
             if(currentLang === 'html') {
-                webContainer.classList.remove('hidden');
+                webContainer.removeel !== null && webContainer.classList.remove('hidden');
                 consoleViewContainer.classList.add('hidden');
-                stdinBtn.classList.add('hidden');
                 runtimeBadge.classList.add('hidden');
                 promptBox.classList.add('hidden');
                 document.getElementById('web-preview').srcdoc = editor.value;
             } else {
                 webContainer.classList.add('hidden');
                 consoleViewContainer.classList.remove('hidden');
-                stdinBtn.classList.remove('hidden');
                 runtimeBadge.classList.add('hidden');
-                promptBox.classList.remove('hidden');
+                promptBox.classList.remove('hidden'); // Tự động hiển thị thanh cin bên dưới đáy terminal
                 terminalOutput.innerText = ""; 
             }
-        }
-
-        function toggleStdinModal() {
-            stdinModal.classList.toggle('hidden');
-            if(!stdinModal.classList.contains('hidden')) {
-                modalStdinText.value = savedStdinData;
-            }
-        }
-
-        function saveStdin() {
-            savedStdinData = modalStdinText.value;
-            statusDot.className = savedStdinData.trim() !== "" ? "w-2 h-2 rounded-full bg-amber-500 ml-1 shadow-lg shadow-amber-500/50" : "w-2 h-2 rounded-full bg-gray-500 ml-1";
-            stdinModal.classList.add('hidden');
-        }
-
-        function clearStdin() {
-            modalStdinText.value = ""; savedStdinData = "";
-            statusDot.className = "w-2 h-2 rounded-full bg-gray-500 ml-1";
-            stdinModal.classList.add('hidden');
         }
 
         function downloadCodeFile() {
@@ -228,7 +176,8 @@
             runtimeBadge.classList.add('hidden');
             terminalOutput.innerText = ""; 
 
-            let finalInput = savedStdinData || inlineInput.value;
+            // Lấy dữ liệu STDIN trực tiếp từ input dưới đáy terminal
+            let finalInput = inlineInput.value;
             const startTime = performance.now();
 
             try {
@@ -246,7 +195,7 @@
                 if (data.data) output += data.data;
                 if (data.error) output += data.error;
                 
-                // KIỂM TRA CHUẨN XÁC: Chỉ khi chuỗi trống rỗng tuyệt đối mới giữ trắng màn hình.
+                // Kiểm tra hiển thị: nếu không có kết quả (chuỗi trống) thì hoàn toàn không in gì
                 if (output === null || output === undefined || output === "") {
                     terminalOutput.innerText = "";
                 } else {
