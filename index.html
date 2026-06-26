@@ -95,18 +95,20 @@
                 <iframe id="web-preview" class="w-full h-full border-none m-0 p-0"></iframe>
             </div>
 
-            <div id="terminal-container" class="flex-1 p-4 font-mono text-sm overflow-y-auto text-gray-300">
-                <div id="interactive-prompt-box" class="hidden items-center space-x-2 mb-2 bg-[#1e293b]/30 p-2 rounded border border-gray-800">
-                    <span class="text-amber-400 animate-pulse font-bold">👉 Nhập dữ liệu cin trực tiếp tại đây:</span>
-                    <input type="text" id="terminal-inline-input" class="flex-1 bg-transparent border-b border-gray-600 outline-none text-white font-mono text-sm pb-0.5" placeholder="Nhập xong ấn nút RUN để gửi..." />
+            <div id="console-view-container" class="flex-1 flex flex-col overflow-hidden p-4 font-mono text-sm">
+                <div id="terminal-container" class="flex-1 overflow-y-auto text-gray-300">
+                    <pre id="terminal-output" class="whitespace-pre-wrap select-text m-0 break-all"></pre>
                 </div>
                 
-                <pre id="terminal-output" class="whitespace-pre-wrap select-text m-0 break-all">// Bấm nút RUN để biên dịch chương trình...</pre>
+                <div id="interactive-prompt-box" class="hidden items-center space-x-2 mt-2 pt-2 border-t border-gray-900 bg-transparent">
+                    <span class="text-amber-400 font-bold flex-shrink-0">👉 STDIN (cin):</span>
+                    <input type="text" id="terminal-inline-input" class="flex-1 bg-transparent border-none outline-none text-white font-mono text-sm pb-0.5 focus:ring-0" placeholder="Nhập dữ liệu biến tại đây nếu cần..." />
+                </div>
             </div>
 
             <div id="loader" class="absolute inset-0 bg-black/60 flex items-center justify-center space-x-3 hidden z-50">
                 <div class="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-sm text-gray-300 font-medium">Đang chạy thuật toán trên Cloud...</span>
+                <span class="text-sm text-gray-300 font-medium">Đang chạy...</span>
             </div>
         </div>
     </main>
@@ -116,26 +118,27 @@
             <div class="px-5 py-3 border-b border-gray-700 flex justify-between items-center bg-[#111827]">
                 <h3 class="text-sm font-bold text-gray-200 flex items-center space-x-2">
                     <i class="fa-solid fa-database text-blue-400"></i>
-                    <span>Cấu hình bộ Test dữ liệu (STDIN)</span>
+                    <span>Cấu hình dữ liệu Test xử lý (ms)</span>
                 </h3>
                 <button onclick="toggleStdinModal()" class="text-gray-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-4 flex-1">
-                <p class="text-xs text-gray-400 mb-2">Dán ma trận, chuỗi testcase lớn vào đây để đo tốc độ xử lý phần cứng (ms):</p>
-                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none leading-relaxed" placeholder="Ví dụ mẫu:\n5\n1 2 3 4 5" spellcheck="false"></textarea>
+                <p class="text-xs text-gray-400 mb-2">Dán ma trận hoặc bộ test dữ liệu đầu vào lớn tại đây để kiểm tra hiệu năng thuật toán:</p>
+                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none leading-relaxed" placeholder="Ví dụ:\n5\n10 20 30 40 50" spellcheck="false"></textarea>
             </div>
             <div class="px-4 py-3 bg-[#111827] border-t border-gray-700 flex justify-end space-x-2">
-                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer text-gray-300">Xóa dữ liệu</button>
-                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md cursor-pointer text-white">Xác nhận Lưu</button>
+                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer text-gray-300">Xóa</button>
+                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md cursor-pointer text-white">Lưu cấu hình</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Các mẫu code mặc định sạch sẽ
         const codeTemplates = {
             html: `<!DOCTYPE html>\n<html>\n<body>\n  <h1 style="color:blue; text-align:center;">EzCompile Live Pages</h1>\n</body>\n</html>`,
-            python: `import time\n\n# Nhập từ STDIN\nprint("Mời nhập tên của bạn:")\nname = input()\nprint(f"Xin chào {name}!")`,
-            cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    int n;\n    cout << "Nhap so phan tu N: ";\n    cin >> n;\n    cout << "Gia tri binh phuong cua N la: " << n * n << endl;\n    return 0;\n}`,
+            python: `print("Hello from Python 3!")`,
+            cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World từ C++!" << endl;\n    return 0;\n}`,
             c: `#include <stdio.h>\nint main() {\n    printf("Hello World!\\n");\n    return 0;\n}`,
             java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello Java!");\n    }\n}`,
             javascript: `console.log("Hello Node!");`
@@ -148,6 +151,7 @@
         const langSelect = document.getElementById('language-select');
         const langIndicator = document.getElementById('lang-indicator');
         const webContainer = document.getElementById('web-preview-container');
+        const consoleViewContainer = document.getElementById('console-view-container');
         const terminalContainer = document.getElementById('terminal-container');
         const terminalOutput = document.getElementById('terminal-output');
         const loader = document.getElementById('loader');
@@ -161,6 +165,8 @@
 
         let currentLang = 'html';
         let savedStdinData = ""; 
+        
+        // LUÔN RESET DỮ LIỆU BAN ĐẦU - KHÔNG SỬ DỤNG COOKIE HOẶC LOCALSTORAGE
         editor.value = codeTemplates[currentLang];
 
         function changeLanguage() {
@@ -168,18 +174,23 @@
             langIndicator.innerText = currentLang.toUpperCase();
             editor.value = codeTemplates[currentLang];
             
+            // Xóa sạch ô nhập liệu cin nhanh khi đổi ngôn ngữ
+            inlineInput.value = ""; 
+
             if(currentLang === 'html') {
                 webContainer.classList.remove('hidden');
+                consoleViewContainer.classList.add('hidden');
                 stdinBtn.classList.add('hidden');
                 runtimeBadge.classList.add('hidden');
                 promptBox.classList.add('hidden');
                 document.getElementById('web-preview').srcdoc = editor.value;
             } else {
                 webContainer.classList.add('hidden');
+                consoleViewContainer.classList.remove('hidden');
                 stdinBtn.classList.remove('hidden');
                 runtimeBadge.classList.add('hidden');
                 promptBox.classList.remove('hidden');
-                terminalOutput.innerText = `// Hệ thống sẵn sàng. Nhập dữ liệu tương tác hoặc bấm RUN.`;
+                terminalOutput.innerText = ""; 
             }
         }
 
@@ -215,7 +226,6 @@
             link.click();
         }
 
-        // BIÊN DỊCH CHƯƠNG TRÌNH VÀ TÍNH TOÁN HIỆU NĂNG THỜI GIAN (MS)
         async function compileAndRun() {
             const sourceCode = editor.value;
             if(currentLang === 'html') {
@@ -226,15 +236,13 @@
             
             loader.classList.remove('hidden');
             runtimeBadge.classList.add('hidden');
-            terminalOutput.innerText = "Đang truyền tải và đo đạc hiệu năng thuật toán...";
+            terminalOutput.innerText = ""; 
 
-            // Xác định input ưu tiên: Nếu có cấu hình testcase lớn thì lấy testcase, không thì lấy text gõ trực tiếp trong ô terminal
             let finalInput = savedStdinData;
             if(!finalInput || finalInput.trim() === "") {
                 finalInput = inlineInput.value;
             }
 
-            // Đánh dấu thời gian bắt đầu (mốc thời gian micro-giây của trình duyệt)
             const startTime = performance.now();
 
             try {
@@ -251,8 +259,6 @@
                 });
 
                 const data = await response.json();
-                
-                // Tính toán khoảng thời gian hoàn tất xử lý (ms)
                 const endTime = performance.now();
                 const totalExecutionTime = Math.round(endTime - startTime);
 
@@ -261,24 +267,24 @@
                 if (data.error) output += data.error;
                 
                 if (!output || output.trim() === "") {
-                    output = "Chương trình chạy xong (Không có dữ liệu xuất).";
+                    terminalOutput.innerText = "";
+                } else {
+                    terminalOutput.innerText = output;
                 }
-                
-                terminalOutput.innerText = output;
 
-                // Hiển thị huy hiệu đo thời gian xử lý (ms)
                 runtimeBadge.innerText = `${totalExecutionTime} ms`;
                 runtimeBadge.classList.remove('hidden');
 
             } catch (error) {
                 console.error(error);
-                terminalOutput.innerText = "[Lỗi kết nối] Không lấy được dữ liệu hiệu năng thuật toán.";
+                terminalOutput.innerText = "[Lỗi kết nối API biên dịch]";
             } finally {
                 loader.classList.add('hidden');
                 terminalContainer.scrollTop = terminalContainer.scrollHeight;
             }
         }
 
+        // Kích hoạt cấu hình mặc định sạch sẽ khi khởi tạo trang
         changeLanguage();
     </script>
 </body>
