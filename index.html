@@ -7,11 +7,27 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
     </style>
 </head>
 <body class="bg-[#0f172a] text-gray-100 flex flex-col h-screen w-screen overflow-hidden font-sans select-none">
@@ -22,14 +38,17 @@
                 <i class="fa-solid fa-code text-xl text-blue-500 animate-pulse"></i>
                 <span>EzCompile</span>
             </div>
-            <select id="language-select" onchange="changeLanguage()" class="bg-[#334155] border border-gray-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white outline-none cursor-pointer hover:bg-[#475569] transition">
-                <option value="html">HTML/CSS/JS (Web)</option>
-                <option value="python">Python 3</option>
-                <option value="cpp">C++ (GCC)</option>
-                <option value="c">C (GCC)</option>
-                <option value="java">Java (JDK)</option>
-                <option value="javascript">JavaScript (Node)</option>
-            </select>
+            
+            <div class="relative">
+                <select id="language-select" onchange="changeLanguage()" class="bg-[#334155] border border-gray-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white outline-none cursor-pointer hover:bg-[#475569] transition">
+                    <option value="html">HTML/CSS/JS (Web)</option>
+                    <option value="python">Python 3</option>
+                    <option value="cpp">C++ (GCC)</option>
+                    <option value="c">C (GCC)</option>
+                    <option value="java">Java (JDK)</option>
+                    <option value="javascript">JavaScript (Node)</option>
+                </select>
+            </div>
         </div>
 
         <div class="flex items-center space-x-3">
@@ -38,6 +57,7 @@
                 <span>Nhập dữ liệu Test (STDIN)</span>
                 <span id="stdin-status-dot" class="w-2 h-2 rounded-full bg-gray-500 ml-1"></span>
             </button>
+
             <button onclick="compileAndRun()" id="run-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg transition flex items-center space-x-2 cursor-pointer shadow-lg shadow-blue-900/30">
                 <i class="fa-solid fa-play"></i>
                 <span>RUN</span>
@@ -46,6 +66,7 @@
     </header>
 
     <main class="flex flex-1 flex-row overflow-hidden h-[calc(100vh-60px)] w-full">
+        
         <div class="w-1/2 flex flex-col bg-[#111827] relative border-r border-gray-800 h-full overflow-hidden">
             <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 flex justify-between items-center h-[40px] flex-shrink-0">
                 <div class="flex items-center space-x-2">
@@ -65,7 +86,9 @@
         <div class="w-1/2 flex flex-col bg-[#020617] h-full overflow-hidden relative">
             <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 h-[40px] flex-shrink-0 flex justify-between items-center">
                 <span>Terminal Output</span>
-                <div id="runtime-badge" class="hidden text-[11px] font-mono font-bold px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">0 ms</div>
+                <div id="runtime-badge" class="hidden text-[11px] font-mono font-bold px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded">
+                    0 ms
+                </div>
             </div>
             
             <div id="web-preview-container" class="w-full h-full bg-white hidden">
@@ -100,11 +123,12 @@
                 <button onclick="toggleStdinModal()" class="text-gray-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-4 flex-1">
-                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none" placeholder="Dán bộ test dữ liệu lớn tại đây..."></textarea>
+                <p class="text-xs text-gray-400 mb-2">Dán ma trận hoặc bộ dữ liệu testcase lớn vào đây để đo tốc độ xử lý phần cứng:</p>
+                <textarea id="modal-stdin-text" class="w-full h-[200px] p-3 bg-[#020617] font-mono text-sm text-emerald-400 border border-gray-800 rounded-lg outline-none resize-none leading-relaxed" placeholder="Ví dụ:\n5\n10 20 30 40 50" spellcheck="false"></textarea>
             </div>
             <div class="px-4 py-3 bg-[#111827] border-t border-gray-700 flex justify-end space-x-2">
-                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300">Xóa</button>
-                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md text-white">Lưu cấu hình</button>
+                <button onclick="clearStdin()" class="px-4 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer text-gray-300">Xóa</button>
+                <button onclick="saveStdin()" class="px-5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-md cursor-pointer text-white">Lưu cấu hình</button>
             </div>
         </div>
     </div>
@@ -222,8 +246,12 @@
                 if (data.data) output += data.data;
                 if (data.error) output += data.error;
                 
-                // Logic chuẩn: Nếu chuỗi rỗng thì hoàn toàn không gán gì vào Terminal
-                terminalOutput.innerText = (!output || output.trim() === "") ? "" : output;
+                // KIỂM TRA CHUẨN XÁC: Chỉ khi chuỗi trống rỗng tuyệt đối mới giữ trắng màn hình.
+                if (output === null || output === undefined || output === "") {
+                    terminalOutput.innerText = "";
+                } else {
+                    terminalOutput.innerText = output;
+                }
 
                 runtimeBadge.innerText = `${totalExecutionTime} ms`;
                 runtimeBadge.classList.remove('hidden');
