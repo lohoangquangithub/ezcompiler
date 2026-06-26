@@ -1,1 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EzCompile - Trình Biên Dịch Đa Ngôn Ngữ</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        /* Custom scrollbar siêu mảnh chuẩn VS Code */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-gray-100 flex flex-col h-screen w-screen overflow-hidden font-sans select-none">
 
+    <header class="bg-[#1e293b] px-6 py-3 flex justify-between items-center border-b border-gray-700 shadow-md h-[60px] flex-shrink-0 z-10">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 font-bold text-xl tracking-wider text-blue-400">
+                <i class="fa-solid fa-rocket text-xl text-blue-500 animate-pulse"></i>
+                <span>EzCompile</span>
+            </div>
+            
+            <div class="relative">
+                <select id="language-select" onchange="changeLanguage()" class="bg-[#334155] border border-gray-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white outline-none cursor-pointer hover:bg-[#475569] transition">
+                    <option value="html">HTML/CSS/JS (Web Front-end)</option>
+                    <option value="python">Python 3</option>
+                    <option value="cpp">C++ (GCC)</option>
+                    <option value="c">C (GCC)</option>
+                    <option value="java">Java (JDK)</option>
+                    <option value="javascript">JavaScript (Node.js)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-950/50 px-3 py-1.5 rounded-lg border border-emerald-800">
+            <i class="fa-solid fa-bolt text-[10px] mr-1 text-emerald-400"></i>
+            <span>GitHub Pages: Live Connection</span>
+        </div>
+
+        <button onclick="compileAndRun()" id="run-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg transition flex items-center space-x-2 cursor-pointer shadow-lg shadow-blue-900/30">
+            <i class="fa-solid fa-play"></i>
+            <span>RUN</span>
+        </button>
+    </header>
+
+    <main class="flex flex-1 flex-row overflow-hidden h-[calc(100vh-60px)] w-full">
+        
+        <div class="w-1/2 flex flex-col bg-[#111827] relative border-r border-gray-800 h-full overflow-hidden">
+            <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 flex justify-between items-center h-[40px] flex-shrink-0">
+                <div class="flex items-center space-x-2">
+                    <span>Source Code</span>
+                    <span id="lang-indicator" class="text-blue-400 font-mono text-[11px] bg-blue-950 px-2 py-0.5 rounded">html</span>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button onclick="downloadCodeFile()" class="text-gray-400 hover:text-blue-400 font-medium text-xs flex items-center space-x-1 transition cursor-pointer bg-[#334155]/40 px-2 py-1 rounded border border-gray-700/60 hover:border-blue-500/50">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Tải Code</span>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 w-full overflow-hidden bg-transparent p-2">
+                <textarea id="editor" class="w-full h-full p-2 bg-transparent font-mono text-sm text-gray-200 outline-none resize-none leading-relaxed overflow-y-auto select-text" spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <div class="w-1/2 flex flex-col bg-[#0b0f19] h-full overflow-hidden">
+            <div class="bg-[#1e293b]/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 h-[40px] flex-shrink-0">
+                Output
+            </div>
+            <div class="flex-1 relative bg-[#020617] overflow-hidden">
+                <div id="web-preview-container" class="w-full h-full bg-white hidden">
+                    <iframe id="web-preview" class="w-full h-full border-none m-0 p-0"></iframe>
+                </div>
+                <div id="terminal-container" class="w-full h-full p-4 font-mono text-sm overflow-y-auto text-gray-300">
+                    <pre id="terminal-output" class="whitespace-pre-wrap select-text m-0 break-all">// Viết code và nhấn nút RUN để chạy chương trình...</pre>
+                </div>
+                <div id="loader" class="absolute inset-0 bg-black/60 flex items-center justify-center space-x-3 hidden z-50">
+                    <div class="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-sm text-gray-300 font-medium">Đang chạy code trực tiếp trên Cloud...</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const codeTemplates = {
+            html: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; text-align: center; background: #f0f4f8; padding-top: 50px; }\n    h1 { color: #1d4ed8; }\n  </style>\n</head>\n<body>\n  <h1>Hello From EzCompile!</h1>\n  <p>Hệ thống Web Sandbox đã sẵn sàng trên GitHub Pages.</p>\n</body>\n</html>`,
+            python: `print("Hello from Python 3!")\n\nfor i in range(1, 6):\n    print(f"Index: {i}")`,
+            cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World từ C++!" << endl;\n    return 0;\n}`,
+            c: `#include <stdio.h>\n\nint main() {\n    printf("Hello World từ Ngôn ngữ C!\\n");\n    return 0;\n}`,
+            java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World từ Java!");\n    }\n}`,
+            javascript: `console.log("Hello World từ Node.js!");\nconst arr = [1, 2, 3, 4, 5];\nconsole.log("Mảng xử lý:", arr.map(x => x * 2));`
+        };
+
+        const fileNames = { python: 'main.py', cpp: 'main.cpp', c: 'main.c', java: 'Main.java', javascript: 'main.js' };
+        const codexLanguages = { python: 'py', cpp: 'cpp', c: 'c', java: 'java', javascript: 'js' };
+
+        const editor = document.getElementById('editor');
+        const langSelect = document.getElementById('language-select');
+        const langIndicator = document.getElementById('lang-indicator');
+        const webContainer = document.getElementById('web-preview-container');
+        const terminalContainer = document.getElementById('terminal-container');
+        const terminalOutput = document.getElementById('terminal-output');
+        const loader = document.getElementById('loader');
+
+        let currentLang = 'html';
+        editor.value = codeTemplates[currentLang];
+
+        function changeLanguage() {
+            currentLang = langSelect.value;
+            langIndicator.innerText = currentLang.toUpperCase();
+            editor.value = codeTemplates[currentLang];
+            
+            if(currentLang === 'html') {
+                webContainer.classList.remove('hidden');
+                terminalContainer.classList.add('hidden');
+                document.getElementById('web-preview').srcdoc = editor.value;
+            } else {
+                webContainer.classList.add('hidden');
+                terminalContainer.classList.remove('hidden');
+                terminalOutput.innerText = `// Đã chuyển sang chế độ ${currentLang.toUpperCase()}. Bấm RUN để biên dịch.`;
+            }
+        }
+
+        function downloadCodeFile() {
+            const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileNames[currentLang] || 'index.html';
+            link.click();
+        }
+
+        // PHƯƠNG THỨC GỬI REQUEST TRỰC TIẾP KHÔNG QUA TRUNG GIAN - SIÊU TỐC TRÊN GITHUB PAGES
+        async function compileAndRun() {
+            const sourceCode = editor.value;
+            if(currentLang === 'html') {
+                webContainer.classList.remove('hidden');
+                terminalContainer.classList.add('hidden');
+                document.getElementById('web-preview').srcdoc = sourceCode;
+                return;
+            }
+            
+            webContainer.classList.add('hidden');
+            terminalContainer.classList.remove('hidden');
+            loader.classList.remove('hidden');
+            terminalOutput.innerText = "Đang kết nối Cloud Compiler...";
+
+            try {
+                const response = await fetch("https://api.codex.jaagrav.in", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({
+                        language: codexLanguages[currentLang],
+                        code: sourceCode,
+                        input: ""
+                    })
+                });
+
+                const data = await response.json();
+                
+                let output = "";
+                if (data.output) output += data.output;
+                if (data.error) output += data.error;
+                
+                if (!output) {
+                    output = "Chương trình thực thi hoàn tất.";
+                }
+                
+                terminalOutput.innerText = output;
+
+            } catch (error) {
+                console.error(error);
+                terminalOutput.innerText = "[Lỗi hệ thống] API tạm thời bận. Hãy thử nhấn RUN lại.";
+            } finally {
+                loader.classList.add('hidden');
+                terminalContainer.scrollTop = terminalContainer.scrollHeight;
+            }
+        }
+
+        changeLanguage();
+    </script>
+</body>
+</html>
