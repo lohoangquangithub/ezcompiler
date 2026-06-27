@@ -1,242 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>OneCompiler Clone</title>
-
-<link rel="stylesheet" href="style.css">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZCompiler - Trình Biên Dịch Online</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
 </head>
-
-<body>
-
-<div class="window">
-
-<!-- ================= TOP BAR ================= -->
-
-<header class="topbar">
-
-<div class="logo">
-
-<i class="fa-solid fa-code"></i>
-
-<span>OneCompiler Clone</span>
-
-</div>
-
-<div class="toolbar">
-
-<button id="newFile">
-<i class="fa-solid fa-file"></i>
-New
-</button>
-
-<button id="openProject">
-<i class="fa-solid fa-folder-open"></i>
-Open
-</button>
-
-<button id="saveProject">
-<i class="fa-solid fa-floppy-disk"></i>
-Save
-</button>
-
-<button id="downloadProject">
-<i class="fa-solid fa-download"></i>
-Download
-</button>
-
-<button id="uploadProject">
-<i class="fa-solid fa-upload"></i>
-Upload
-</button>
-
-<button class="run" id="runBtn">
-<i class="fa-solid fa-play"></i>
-Run
-</button>
-
-</div>
-
-<div class="account">
-
-<i class="fa-solid fa-user"></i>
-
-</div>
-
-</header>
-
-<!-- ================= MAIN ================= -->
-
-<div class="main">
-
-<!-- LEFT -->
-
-<aside class="sidebar">
-
-<div class="sidebar-title">
-
-Explorer
-
-</div>
-
-<div class="project-name">
-
-PROJECT
-
-</div>
-
-<ul id="fileTree">
-
-<li class="folder">
-
-<i class="fa-solid fa-folder-open"></i>
-
-project
-
-<ul>
-
-<li class="file active" data-file="index.html">
-
-<i class="fa-brands fa-html5"></i>
-
-index.html
-
-</li>
-
-<li class="file" data-file="style.css">
-
-<i class="fa-brands fa-css3-alt"></i>
-
-style.css
-
-</li>
-
-<li class="file" data-file="script.js">
-
-<i class="fa-brands fa-js"></i>
-
-script.js
-
-</li>
-
-</ul>
-
-</li>
-
-</ul>
-
-</aside>
-
-<!-- CENTER -->
-
-<section class="workspace">
-
-<!-- Tabs -->
-
-<div class="tabs">
-
-<div class="tab active">
-
-index.html
-
-<span>x</span>
-
-</div>
-
-</div>
-
-<!-- Editor -->
-
-<div id="editor">
-
-<textarea id="code">
-
-<!DOCTYPE html>
-
-<html>
-
-<head>
-
-<title>Hello</title>
-
-</head>
-
-<body>
-
-<h1>Hello World</h1>
-
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+
+    <header class="bg-gray-800 p-4 shadow-md border-b border-gray-700">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-green-400 flex items-center gap-2">
+                <span>⚡</span> EZCompiler
+            </h1>
+            <div class="flex items-center gap-4">
+                <label for="language" class="text-sm font-medium">Ngôn ngữ:</label>
+                <select id="language" class="bg-gray-700 text-white px-3 py-1.5 rounded border border-gray-600 focus:outline-none focus:border-green-500">
+                    <option value="71">Python (3.8.1)</option>
+                    <option value="63">JavaScript (Node.js 12.14.0)</option>
+                    <option value="54">C++ (GCC 9.2.0)</option>
+                </select>
+                <button id="run-btn" class="bg-green-500 hover:bg-green-600 text-gray-950 font-bold px-5 py-1.5 rounded transition duration-200 shadow-lg">
+                    Chạy Code ▶
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 container mx-auto p-4 flex flex-col md:flex-row gap-4 h-[calc(100vh-80px)]">
+        <div class="flex-1 flex flex-col bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-xl">
+            <div class="bg-gray-750 px-4 py-2 border-b border-gray-700 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Trình soạn thảo mã nguồn
+            </div>
+            <textarea id="code-editor" class="flex-1 p-4 bg-gray-950 text-green-300 font-mono text-sm resize-none focus:outline-none focus:ring-1 focus:ring-green-500" placeholder="Nhập code của bạn vào đây..."></textarea>
+        </div>
+
+        <div class="w-full md:w-1/3 flex flex-col bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-xl">
+            <div class="bg-gray-750 px-4 py-2 border-b border-gray-700 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Kết quả (Output)
+            </div>
+            <div id="output-box" class="flex-1 p-4 bg-gray-950 font-mono text-sm text-gray-300 overflow-y-auto whitespace-pre-wrap">
+                Nhấn "Chạy Code" để xem kết quả biên dịch.
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Code mẫu cho từng ngôn ngữ
+        const sampleCode = {
+            "71": `print("Xin chào từ EZCompiler!")\na = 5\nb = 10\nprint(f"Tổng của {a} và {b} là: {a + b}")`,
+            "63": `console.log("Xin chào từ EZCompiler!");\nlet a = 5;\nlet b = 10;\nconsole.log(\`Tổng của \${a} và \${b} là: \${a + b}\`);`,
+            "54": `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào từ EZCompiler!" << endl;\n    int a = 5, b = 10;\n    cout << "Tong la: " << a + b << endl;\n    return 0;\n}`
+        };
+
+        const languageSelect = document.getElementById('language');
+        const codeEditor = document.getElementById('code-editor');
+        const runBtn = document.getElementById('run-btn');
+        const outputBox = document.getElementById('output-box');
+
+        // Đặt code mặc định khi tải trang
+        codeEditor.value = sampleCode[languageSelect.value];
+
+        // Thay đổi code mẫu khi đổi ngôn ngữ
+        languageSelect.addEventListener('change', (e) => {
+            codeEditor.value = sampleCode[e.target.value];
+        });
+
+        // Hàm gọi API để chạy code
+        runBtn.addEventListener('click', async () => {
+            const sourceCode = codeEditor.value;
+            const languageId = languageSelect.value;
+
+            if (!sourceCode.trim()) {
+                outputBox.innerHTML = "<span class='text-red-400'>Vui lòng nhập code trước khi chạy!</span>";
+                return;
+            }
+
+            outputBox.innerHTML = "<span class='text-yellow-400 animate-pulse'>Đang biên dịch và chạy...</span>";
+            runBtn.disabled = true;
+
+            try {
+                // Gửi request đến Public API của Judge0
+                const response = await fetch("https://judge0-ce.p.sulu.sh/submissions?wait=true", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        source_code: btoa(sourceCode), // Mã hóa base64 theo yêu cầu của API
+                        language_id: parseInt(languageId)
+                    })
+                });
+
+                const data = await response.json();
+
+                // Giải mã kết quả trả về
+                let output = "";
+                if (data.stdout) output += atob(data.stdout);
+                if (data.stderr) output += `<span class='text-red-400'>${atob(data.stderr)}</span>`;
+                if (data.compile_output) output += `<span class='text-red-400'>${atob(data.compile_output)}</span>`;
+
+                outputBox.innerHTML = output || "<span class='text-gray-500'>Chương trình chạy thành công (Không có kết quả xuất ra).</span>";
+
+            } catch (error) {
+                outputBox.innerHTML = `<span class='text-red-500'>Lỗi kết nối hệ thống: ${error.message}</span>`;
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
-
-</html>
-
-</textarea>
-
-</div>
-
-</section>
-
-<!-- RIGHT -->
-
-<aside class="previewPanel">
-
-<div class="previewTitle">
-
-Preview
-
-</div>
-
-<iframe id="preview"></iframe>
-
-</aside>
-
-</div>
-
-<!-- ================= BOTTOM ================= -->
-
-<footer class="console">
-
-<div class="console-header">
-
-Console
-
-<button id="clearConsole">
-
-Clear
-
-</button>
-
-</div>
-
-<pre id="consoleOutput">
-
-Ready.
-
-</pre>
-
-</footer>
-
-</div>
-
-<input type="file"
-
-id="uploadInput"
-
-hidden>
-
-<script src="script.js"></script>
-
-</body>
-
 </html>
