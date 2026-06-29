@@ -2,71 +2,69 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>EZCompiler</title>
+    <title>EZCompiler Hybrid</title>
     <style>
         body { background: #0b0f19; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        textarea { width: 100%; height: 40%; background: #121212; color: #fff; padding: 10px; }
-        #output { background: #090d16; color: #4ade80; padding: 10px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; }
-        button { padding: 10px; background: #00c853; border: none; color: white; cursor: pointer; }
+        .controls { padding: 10px; background: #1a202c; }
+        textarea { width: 100%; height: 40%; background: #121212; color: #fff; padding: 10px; border: none; }
+        #output { background: #090d16; color: #4ade80; padding: 10px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; border-top: 1px solid #333; }
+        button { padding: 10px 20px; background: #00c853; border: none; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<select id="lang">
-    <option value="cpp">C++ (gcc-head)</option>
-    <option value="c">C (gcc-head)</option>
-    <option value="java">Java (openjdk-head)</option>
-    <option value="python">Python (cpython-head)</option>
-    <option value="js">JavaScript (nodejs-head)</option>
-</select>
-<button onclick="runCode()">Chạy Code</button>
+<div class="controls">
+    <select id="lang">
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="java">Java</option>
+        <option value="python">Python 3</option>
+        <option value="js">JavaScript</option>
+    </select>
+    <button onclick="runCode()">Chạy Code</button>
+</div>
 
-<textarea id="code">
-#include <iostream>
-int main() { std::cout << "Hello World"; return 0; }
-</textarea>
+<textarea id="code">#include <iostream>
+using namespace std;
+int main() { cout << "Hello World!"; return 0; }</textarea>
 
 <div id="output">Kết quả sẽ hiện ở đây...</div>
 
 <script>
     async function runCode() {
-        const output = document.getElementById('output');
-        const code = document.getElementById('code').value;
         const lang = document.getElementById('lang').value;
+        const code = document.getElementById('code').value;
+        const output = document.getElementById('output');
         
-        // Mapping tối giản
-        const compilerIds = {
-            'cpp': 'gcc-head',
-            'c': 'gcc-head',
-            'java': 'openjdk-head',
-            'python': 'cpython-head',
-            'js': 'nodejs-head'
-        };
+        output.innerText = "Đang xử lý...";
 
-        output.innerText = "Đang gửi request...";
-
+        // CẤU HÌNH API Ở ĐÂY
+        // Nếu bạn muốn dùng Piston cho C/C++ (cái cũ), hãy sửa lại endpoint và payload tương ứng
+        // Hiện tại đang cấu hình mặc định dùng Wandbox cho mọi ngôn ngữ
+        
+        const isCpp = (lang === 'cpp' || lang === 'c');
+        
         try {
+            // Đây là logic gọi API
             const response = await fetch('https://wandbox.org/api/compile.json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    compiler: compilerIds[lang],
+                    compiler: isCpp ? 'gcc-head' : (lang === 'java' ? 'openjdk-head' : (lang === 'python' ? 'cpython-head' : 'nodejs-head')),
                     code: code,
-                    // BỎ THAM SỐ "OPTIONS" ĐỂ TRÁNH GÂY LỖI SERVER
-                    save: false 
+                    save: false
                 })
             });
 
-            // Nếu server trả về 500, nó sẽ nhảy vào block catch hoặc trả về json lỗi
             const data = await response.json();
-            console.log("Phản hồi từ server:", data); // QUAN TRỌNG: Mở F12 xem cái này
 
-            if (data.compiler_error) output.innerText = "Lỗi: " + data.compiler_error;
-            else if (data.program_output) output.innerText = data.program_output;
-            else output.innerText = "Kết quả: " + JSON.stringify(data);
-
+            if (data.compiler_error || data.program_error) {
+                output.innerText = "Lỗi: " + (data.compiler_error || data.program_error);
+            } else {
+                output.innerText = data.program_output || "Chương trình thực thi thành công.";
+            }
         } catch (e) {
-            output.innerText = "Lỗi kết nối: " + e.message + "\nVui lòng kiểm tra Console (F12)";
+            output.innerText = "Lỗi kết nối: " + e.message;
         }
     }
 </script>
