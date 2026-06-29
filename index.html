@@ -8,46 +8,33 @@
 
     const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
 
-    // --- BƯỚC 1: ĐỌC DỮ LIỆU NGAY LẬP TỨC ---
-    const savedLang = localStorage.getItem('lang') || 'cpp';
-    const savedCode = localStorage.getItem('code') || templates['cpp'];
+    // --- LOGIC RESET CỨNG ---
+    // Chúng ta không đọc từ localStorage nữa. 
+    // Mọi biến khởi tạo đều được set cứng về C++
+    const defaultLang = 'cpp';
+    const defaultCode = templates['cpp'];
 
-    // --- BƯỚC 2: CẬP NHẬT UI TRƯỚC KHI EDITOR KHỞI TẠO ---
-    const langSelect = document.getElementById('lang');
-    langSelect.value = savedLang; 
+    // 1. Set giá trị cho select box mặc định là C++
+    document.getElementById('lang').value = defaultLang;
 
-    // --- BƯỚC 3: KHỞI TẠO EDITOR VỚI DỮ LIỆU ĐÃ ĐỌC ---
-    let editor = CodeMirror(document.getElementById("editor"), {
-        value: savedCode, // Load chính xác cái này
-        mode: modes[savedLang],
+    // 2. Khởi tạo Editor luôn luôn là C++
+    let editor = CodeMirror(document.getElementById("editor-container"), {
+        value: defaultCode,
+        mode: modes[defaultLang],
         theme: "monokai",
         lineNumbers: true
     });
 
-    // --- BƯỚC 4: CÁC HÀM XỬ LÝ ---
-
-    // Hàm đổi ngôn ngữ (Chỉ chạy khi người dùng chọn thủ công)
-    function onLangChange() {
-        const lang = langSelect.value;
-        
-        // 1. Ghi đè template mới (Người dùng chủ động đổi thì mới đè)
-        editor.setValue(templates[lang]);
-        
-        // 2. Cập nhật mode
+    // 3. Logic đổi ngôn ngữ (Vẫn giữ để bạn chọn sang ngôn ngữ khác khi đang làm việc)
+    // Nhưng vì không load lại localStorage, nên chỉ cần F5 là mọi thứ quay về đầu.
+    document.getElementById('lang').addEventListener('change', function() {
+        const lang = this.value;
         editor.setOption("mode", modes[lang]);
-        
-        // 3. Lưu vào storage
-        localStorage.setItem('lang', lang);
-        localStorage.setItem('code', templates[lang]);
-    }
-
-    // Auto-save khi gõ (Chỉ lưu code, không đổi ngôn ngữ, không đè template)
-    editor.on('change', () => {
-        localStorage.setItem('code', editor.getValue());
+        editor.setValue(templates[lang]);
     });
 
-    // Các hàm khác giữ nguyên...
-    async function init() { /* load pyodide ... */ }
-    init();
-    async function runCode() { /* ... */ }
+    // LƯU Ý: Tôi đã bỏ đoạn editor.on('change') ghi vào localStorage 
+    // để đảm bảo tính chất "reset sạch sẽ" hoàn toàn.
+    
+    async function runCode() { /* ... logic của bạn ... */ }
 </script>
