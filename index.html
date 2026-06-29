@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EZCompiler - Piston Engine</title>
+    <title>EZCompiler</title>
     <style>
         body { margin: 0; background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; flex-direction: column; }
         header { background: #1a202c; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2d3748; }
@@ -51,21 +51,22 @@
 </div>
 
 <script>
+    // 1. Mã nguồn mẫu
     const templates = {
         'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào từ EZCompiler!" << endl;\n    int a = 5, b = 10;\n    cout << "Tong la: " << a + b << endl;\n    return 0;\n}',
         'c': '#include <stdio.h>\n\nint main() {\n    printf("Xin chào từ EZCompiler!\\n");\n    int a = 5, b = 10;\n    printf("Tong la: %d\\n", a + b);\n    return 0;\n}',
-        'java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Xin chào từ EZCompiler!");\n        int a = 5, b = 10;\n        System.out.println("Tong la: " + (a + b));\n    }\n}',
+        'java': 'class Main {\n    public static void main(String[] args) {\n        System.out.println("Xin chào từ EZCompiler!");\n        int a = 5, b = 10;\n        System.out.println("Tong la: " + (a + b));\n    }\n}',
         'python': 'print("Xin chào từ EZCompiler!")\na = 5\nb = 10\nprint(f"Tong la: {a + b}")',
         'javascript': 'console.log("Xin chào từ EZCompiler!");\nlet a = 5, b = 10;\nconsole.log("Tong la:", a + b);'
     };
 
-    // BẢN VÁ LỖI: Cung cấp chính xác phiên bản mà Piston API (emkc.org) đang cài đặt
-    const languageVersions = {
-        'cpp': '10.2.0',
-        'c': '10.2.0',
-        'java': '15.0.2',
-        'python': '3.10.0',
-        'javascript': '18.15.0'
+    // 2. Định danh compiler của Wandbox
+    const compilers = {
+        'cpp': 'gcc-head',
+        'c': 'gcc-head-c',
+        'java': 'openjdk-head',
+        'python': 'cpython-head',
+        'javascript': 'nodejs-head'
     };
 
     function updateEditor() {
@@ -81,43 +82,44 @@
         const langValue = document.getElementById('language').value;
 
         outputDiv.classList.remove('error-text');
-        outputDiv.innerText = "Đang kết nối tới máy chủ biên dịch...";
+        outputDiv.innerText = "Đang kết nối tới máy chủ biên dịch (Wandbox)...";
 
         try {
-            const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+            const response = await fetch('https://wandbox.org/api/compile.json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    language: langValue,
-                    version: languageVersions[langValue], // Sử dụng phiên bản chuẩn đã khai báo
-                    files: [{ content: codeText }]
+                    compiler: compilers[langValue],
+                    code: codeText,
+                    save: false // Không lưu lại lịch sử code trên máy chủ công cộng
                 })
             });
 
             const data = await response.json();
 
-            if (data.run) {
-                if (data.run.stderr) {
-                    outputDiv.classList.add('error-text');
-                    outputDiv.innerText = data.run.stderr;
-                } else if (data.run.stdout) {
-                    outputDiv.innerText = data.run.stdout;
-                } else {
-                    outputDiv.innerText = "Chương trình đã thực thi thành công nhưng không có dữ liệu output.";
-                }
-            } 
-            // Đọc thông báo lỗi trực tiếp từ Piston API (nếu có)
-            else if (data.message) {
+            // Xử lý logic bóc tách kết quả từ cấu trúc của Wandbox
+            if (data.compiler_error) {
+                // Lỗi cú pháp (Syntax Error) xuất hiện trước khi chạy
                 outputDiv.classList.add('error-text');
-                outputDiv.innerText = "Lỗi từ máy chủ Piston: " + data.message;
-            } 
-            else {
+                outputDiv.innerText = "Lỗi biên dịch:\n" + data.compiler_error;
+            } else if (data.program_error) {
+                // Lỗi thực thi (Runtime Error) do tràn bộ nhớ, vòng lặp vô hạn...
                 outputDiv.classList.add('error-text');
-                outputDiv.innerText = "Lỗi phản hồi hệ thống: Không thể đọc cấu trúc dữ liệu từ máy chủ.";
+                outputDiv.innerText = "Lỗi thực thi:\n" + data.program_error;
+            } else if (data.program_output) {
+                // Code chạy mượt mà và xuất ra dữ liệu
+                outputDiv.innerText = data.program_output;
+            } else if (data.status === "0") {
+                // Code chạy thành công nhưng không có hàm print/cout
+                outputDiv.innerText = "Chương trình đã thực thi thành công nhưng không có dữ liệu output.";
+            } else {
+                outputDiv.classList.add('error-text');
+                outputDiv.innerText = "Lỗi không xác định: Không nhận được dữ liệu hợp lệ.";
             }
+
         } catch (error) {
             outputDiv.classList.add('error-text');
-            outputDiv.innerText = "Lỗi kết nối mạng: Không thể gửi yêu cầu đến Piston API.\nChi tiết: " + error.message;
+            outputDiv.innerText = "Lỗi kết nối: Máy chủ Wandbox tạm thời không phản hồi.\nChi tiết: " + error.message;
         }
     }
 
