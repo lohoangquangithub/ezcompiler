@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>EZCompiler | Auto-Switch Mode</title>
+    <title>EZCompiler | Full Auto-Switch</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
@@ -74,7 +74,7 @@
         lineNumbers: true
     });
 
-    // Hàm auto-switch: Thay đổi ngôn ngữ và load code mẫu ngay lập tức
+    // Hàm Auto-switch: Đổi ngôn ngữ và nạp template ngay lập tức
     function updateMode() {
         const lang = document.getElementById('lang').value;
         const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
@@ -82,9 +82,12 @@
         // 1. Đổi Syntax Highlighting
         editor.setOption("mode", modes[lang]);
         
-        // 2. Tự động áp dụng code mẫu NGAY LẬP TỨC (Không dùng confirm)
+        // 2. Nạp template mới ngay lập tức
         editor.setValue(templates[lang]);
+        
+        // 3. Lưu lại
         localStorage.setItem('code', templates[lang]);
+        status.innerText = "Đã chuyển sang " + lang.toUpperCase();
     }
 
     editor.on('change', () => {
@@ -132,7 +135,7 @@
                 catch (e) { output.innerText = "Lỗi: " + e.message; } 
                 finally { console.log = oldLog; }
             }
-        } catch (e) { output.innerText = "Lỗi: " + e.message; } 
+        } catch (e) { output.innerText = "Lỗi kết nối: " + e.message; } 
         finally { loader.style.display = 'none'; }
     }
 </script>
