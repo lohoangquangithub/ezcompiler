@@ -2,35 +2,43 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>EZCompiler | Integrated IDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZCompiler | Full Integrated IDE</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/clike/clike.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
 
     <style>
         :root { --bg: #1e1e1e; --panel: #252526; --accent: #00c853; --border: #333; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* Header & Layout */
+        /* Header */
         .header { padding: 10px 20px; background: var(--panel); display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border); }
-        .main { display: flex; flex-grow: 1; overflow: hidden; position: relative; }
-        .panel { display: flex; flex-direction: column; width: 50%; padding: 10px; border-right: 1px solid var(--border); }
-        .io-container { width: 50%; display: flex; flex-direction: column; padding: 10px; gap: 5px; }
         
-        /* Editor & IO */
+        /* Main Layout */
+        .main { display: flex; flex-grow: 1; overflow: hidden; position: relative; }
+        .panel { display: flex; flex-direction: column; width: 55%; padding: 10px; border-right: 1px solid var(--border); }
+        .io-container { width: 45%; display: flex; flex-direction: column; padding: 10px; gap: 5px; }
+        
+        /* Editor Styles */
         .editor-container { flex-grow: 1; border: 1px solid var(--border); }
         .CodeMirror { height: 100% !important; font-size: 14px; }
-        textarea#stdin { height: 150px; background: #121212; color: #fff; border: 1px solid var(--border); padding: 10px; resize: none; font-family: monospace; }
-        #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
         
-        /* UI Elements */
-        button { padding: 8px 20px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        /* IO Styles */
+        textarea#stdin { height: 200px; background: #121212; color: #fff; border: 1px solid var(--border); padding: 10px; resize: vertical; font-family: monospace; }
+        #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: 'Consolas', monospace; border: 1px solid var(--border); }
+        
+        /* Components */
+        button { padding: 8px 20px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.3s; }
+        button:hover { background: #00a845; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; font-weight: bold; }
+        .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; }
     </style>
 </head>
 <body>
@@ -38,14 +46,14 @@
 <div id="loader" class="overlay">Đang xử lý dữ liệu...</div>
 
 <div class="header">
-    <select id="lang" onchange="updateMode()">
+    <select id="lang" onchange="updateMode()" style="padding: 5px; background: #333; color: white; border: none;">
         <option value="cpp">C++</option>
         <option value="c">C</option>
         <option value="python">Python</option>
         <option value="javascript">JavaScript</option>
     </select>
     <button id="runBtn" onclick="runCode()">Chạy Code ▶</button>
-    <span id="status">Sẵn sàng</span>
+    <span id="status" style="font-size: 0.8em; color: #aaa;">Đang khởi tạo...</span>
 </div>
 
 <div class="main">
@@ -54,9 +62,9 @@
     </div>
     <div class="io-container">
         <label><strong>Input (stdin):</strong></label>
-        <textarea id="stdin" placeholder="Nhập dữ liệu đầu vào..."></textarea>
+        <textarea id="stdin" placeholder="Nhập dữ liệu đầu vào cho code tại đây..."></textarea>
         <label><strong>Output:</strong></label>
-        <div id="output">Kết quả sẽ hiện ở đây...</div>
+        <div id="output">Kết quả sẽ hiển thị tại đây...</div>
     </div>
 </div>
 
@@ -68,15 +76,16 @@
     const runBtn = document.getElementById('runBtn');
     const loader = document.getElementById('loader');
 
-    // 1. Khởi tạo Editor
+    // 1. Khởi tạo Editor với CodeMirror
     let editor = CodeMirror(document.getElementById("editor"), {
         value: localStorage.getItem('code') || "// Viết code tại đây",
         mode: "text/x-c++src",
         theme: "monokai",
-        lineNumbers: true
+        lineNumbers: true,
+        indentUnit: 4
     });
 
-    // 2. Debounce LocalStorage (Tối ưu performance)
+    // 2. Debounce LocalStorage (Tối ưu hóa hiệu năng)
     editor.on('change', () => {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
@@ -85,25 +94,27 @@
         }, 1000);
     });
 
+    // 3. Khởi tạo Pyodide
     async function init() {
         pyodide = await loadPyodide();
-        status.innerText = "Python đã sẵn sàng.";
+        status.innerText = "Sẵn sàng!";
     }
     init();
 
+    // Thay đổi mode syntax
     function updateMode() {
         const lang = document.getElementById('lang').value;
         const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
         editor.setOption("mode", modes[lang]);
     }
 
-    // 3. Error Parsing (Làm sạch log)
+    // 4. Hàm làm sạch lỗi (Error Parsing)
     function formatError(errorMsg) {
-        if (!errorMsg) return "Không rõ lỗi.";
+        if (!errorMsg) return "Không có thông tin lỗi.";
         return errorMsg.replace(/\/tmp\/.*\.cpp:/g, "Lỗi tại dòng: ");
     }
 
-    // 4. Logic chạy code (Overlay + Async Control)
+    // 5. Logic chạy code chính
     async function runCode() {
         const lang = document.getElementById('lang').value;
         const code = editor.getValue();
