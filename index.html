@@ -1,40 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>EZCompiler | Full Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+
+    <style>
+        :root { --bg: #1e1e1e; --panel: #252526; --accent: #00c853; --border: #333; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .header { padding: 10px 20px; background: var(--panel); display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--border); }
+        .main { display: flex; flex-grow: 1; overflow: hidden; }
+        .panel { display: flex; flex-direction: column; width: 55%; padding: 10px; border-right: 1px solid var(--border); }
+        .io-container { width: 45%; display: flex; flex-direction: column; padding: 10px; gap: 5px; }
+        .editor-container { flex-grow: 1; border: 1px solid var(--border); }
+        .CodeMirror { height: 100% !important; font-size: 14px; }
+        textarea#stdin { height: 150px; background: #121212; color: #fff; border: 1px solid var(--border); padding: 10px; resize: vertical; }
+        #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
+        button { padding: 8px 15px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div id="loader" class="overlay">Đang xử lý...</div>
+
+<div class="header">
+    <select id="lang" style="padding: 8px; background: #333; color: white; border: none;">
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+    </select>
+    <button onclick="runCode()">Chạy Code ▶</button>
+</div>
+
+<div class="main">
+    <div class="panel">
+        <div class="editor-container" id="editor"></div>
+    </div>
+    <div class="io-container">
+        <strong>Input (stdin):</strong>
+        <textarea id="stdin" placeholder="Dữ liệu đầu vào..."></textarea>
+        <strong>Output:</strong>
+        <div id="output">Kết quả hiển thị tại đây...</div>
+    </div>
+</div>
+
 <script>
+    let pyodide = null;
+    const output = document.getElementById('output');
+    const loader = document.getElementById('loader');
+
     const templates = {
         cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello C++!" << std::endl;\n    return 0;\n}`,
         c: `#include <stdio.h>\n\nint main() {\n    printf("Hello C!\\n");\n    return 0;\n}`,
         python: `print("Hello Python!")`,
-        javascript: `console.log("Hello JS!");`
+        javascript: `console.log("Hello JavaScript!");`
     };
 
     const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
 
-    // --- LOGIC RESET CỨNG ---
-    // Chúng ta không đọc từ localStorage nữa. 
-    // Mọi biến khởi tạo đều được set cứng về C++
-    const defaultLang = 'cpp';
-    const defaultCode = templates['cpp'];
-
-    // 1. Set giá trị cho select box mặc định là C++
-    document.getElementById('lang').value = defaultLang;
-
-    // 2. Khởi tạo Editor luôn luôn là C++
-    let editor = CodeMirror(document.getElementById("editor-container"), {
-        value: defaultCode,
-        mode: modes[defaultLang],
+    // Khởi tạo Editor (Luôn reset về C++ khi F5)
+    let editor = CodeMirror(document.getElementById("editor"), {
+        value: templates['cpp'],
+        mode: modes['cpp'],
         theme: "monokai",
         lineNumbers: true
     });
 
-    // 3. Logic đổi ngôn ngữ (Vẫn giữ để bạn chọn sang ngôn ngữ khác khi đang làm việc)
-    // Nhưng vì không load lại localStorage, nên chỉ cần F5 là mọi thứ quay về đầu.
+    // Lắng nghe sự kiện đổi ngôn ngữ
     document.getElementById('lang').addEventListener('change', function() {
         const lang = this.value;
         editor.setOption("mode", modes[lang]);
         editor.setValue(templates[lang]);
     });
 
-    // LƯU Ý: Tôi đã bỏ đoạn editor.on('change') ghi vào localStorage 
-    // để đảm bảo tính chất "reset sạch sẽ" hoàn toàn.
-    
-    async function runCode() { /* ... logic của bạn ... */ }
+    // Init Pyodide
+    async function init() {
+        pyodide = await loadPyodide();
+    }
+    init();
+
+    // Logic Run Code
+    async function runCode() {
+        const lang = document.getElementById('lang').value;
+        const code = editor.getValue();
+        const input = document.getElementById('stdin').value;
+        loader.style.display = 'flex';
+        output.innerText = "";
+        try {
+            if (lang === 'cpp' || lang === 'c') {
+                const response = await fetch('https://wandbox.org/api/compile.json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ compiler: 'gcc-head', code: code, stdin: input, save: false })
+                });
+                const data = await response.json();
+                output.innerText = data.compiler_error || data.program_error || data.program_output || "Hoàn thành.";
+            } 
+            else if (lang === 'python') {
+                await pyodide.runPythonAsync(`import sys, io; sys.stdin = io.StringIO("""${input.replace(/"/g, '\\"')}"""); sys.stdout = io.StringIO()`);
+                try {
+                    await pyodide.runPythonAsync(code);
+                    output.innerText = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+                } catch (e) { output.innerText = "Lỗi: " + e.message; }
+            }
+            else if (lang === 'javascript') {
+                let logs = [];
+                const oldLog = console.log;
+                console.log = (...args) => logs.push(args.join(" "));
+                try { eval(code); output.innerText = logs.length > 0 ? logs.join("\n") : "Thực thi thành công."; } 
+                catch (e) { output.innerText = "Lỗi: " + e.message; } 
+                finally { console.log = oldLog; }
+            }
+        } catch (e) { output.innerText = "Lỗi: " + e.message; } 
+        finally { loader.style.display = 'none'; }
+    }
 </script>
+</body>
+</html>
