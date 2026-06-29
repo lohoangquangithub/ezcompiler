@@ -51,16 +51,16 @@
 </div>
 
 <script>
-    // 1. Mã nguồn mẫu
+    // Định nghĩa các mẫu code cho từng ngôn ngữ
     const templates = {
-        'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào từ EZCompiler!" << endl;\n    int a = 5, b = 10;\n    cout << "Tong la: " << a + b << endl;\n    return 0;\n}',
-        'c': '#include <stdio.h>\n\nint main() {\n    printf("Xin chào từ EZCompiler!\\n");\n    int a = 5, b = 10;\n    printf("Tong la: %d\\n", a + b);\n    return 0;\n}',
-        'java': 'class Main {\n    public static void main(String[] args) {\n        System.out.println("Xin chào từ EZCompiler!");\n        int a = 5, b = 10;\n        System.out.println("Tong la: " + (a + b));\n    }\n}',
-        'python': 'print("Xin chào từ EZCompiler!")\na = 5\nb = 10\nprint(f"Tong la: {a + b}")',
-        'javascript': 'console.log("Xin chào từ EZCompiler!");\nlet a = 5, b = 10;\nconsole.log("Tong la:", a + b);'
+        'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào từ EZCompiler!" << endl;\n    return 0;\n}',
+        'c': '#include <stdio.h>\n\nint main() {\n    printf("Xin chào từ EZCompiler!\\n");\n    return 0;\n}',
+        'java': 'class Main {\n    public static void main(String[] args) {\n        System.out.println("Xin chào từ EZCompiler!");\n    }\n}',
+        'python': 'print("Xin chào từ EZCompiler!")',
+        'javascript': 'console.log("Xin chào từ EZCompiler!");'
     };
 
-    // 2. Định danh compiler của Wandbox
+    // Mapping ngôn ngữ sang compiler của Wandbox
     const compilers = {
         'cpp': 'gcc-head',
         'c': 'gcc-head-c',
@@ -82,7 +82,7 @@
         const langValue = document.getElementById('language').value;
 
         outputDiv.classList.remove('error-text');
-        outputDiv.innerText = "Đang kết nối tới máy chủ biên dịch (Wandbox)...";
+        outputDiv.innerText = "Đang kết nối tới máy chủ (Wandbox)...";
 
         try {
             const response = await fetch('https://wandbox.org/api/compile.json', {
@@ -91,35 +91,27 @@
                 body: JSON.stringify({
                     compiler: compilers[langValue],
                     code: codeText,
-                    save: false // Không lưu lại lịch sử code trên máy chủ công cộng
+                    save: false 
                 })
             });
 
             const data = await response.json();
 
-            // Xử lý logic bóc tách kết quả từ cấu trúc của Wandbox
+            // Wandbox trả về dữ liệu khác Piston, chúng ta cần xử lý theo cấu trúc mới
             if (data.compiler_error) {
-                // Lỗi cú pháp (Syntax Error) xuất hiện trước khi chạy
                 outputDiv.classList.add('error-text');
                 outputDiv.innerText = "Lỗi biên dịch:\n" + data.compiler_error;
             } else if (data.program_error) {
-                // Lỗi thực thi (Runtime Error) do tràn bộ nhớ, vòng lặp vô hạn...
                 outputDiv.classList.add('error-text');
                 outputDiv.innerText = "Lỗi thực thi:\n" + data.program_error;
             } else if (data.program_output) {
-                // Code chạy mượt mà và xuất ra dữ liệu
                 outputDiv.innerText = data.program_output;
-            } else if (data.status === "0") {
-                // Code chạy thành công nhưng không có hàm print/cout
-                outputDiv.innerText = "Chương trình đã thực thi thành công nhưng không có dữ liệu output.";
             } else {
-                outputDiv.classList.add('error-text');
-                outputDiv.innerText = "Lỗi không xác định: Không nhận được dữ liệu hợp lệ.";
+                outputDiv.innerText = "Chương trình chạy xong (không có output).";
             }
-
         } catch (error) {
             outputDiv.classList.add('error-text');
-            outputDiv.innerText = "Lỗi kết nối: Máy chủ Wandbox tạm thời không phản hồi.\nChi tiết: " + error.message;
+            outputDiv.innerText = "Lỗi kết nối tới máy chủ: " + error.message;
         }
     }
 
