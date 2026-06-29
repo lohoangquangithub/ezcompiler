@@ -34,24 +34,22 @@
     let pyodide = null;
     const output = document.getElementById('output');
     
-    // 1. Kho mẫu code cho từng ngôn ngữ
+    // Kho mẫu code đã cập nhật
     const templates = {
-        'cpp': '#include <iostream>\n\nint main() {\n    std::cout << "Hello C++";\n    return 0;\n}',
-        'c': '#include <stdio.h>\n\nint main() {\n    printf("Hello C");\n    return 0;\n}',
-        'python': 'print("Hello Python")',
-        'js': 'console.log("Hello JavaScript");'
+        'cpp': '#include <iostream>\n\nint main() {\n    std::cout << "hello";\n    return 0;\n}',
+        'c': '#include <stdio.h>\n\nint main() {\n    printf("hello");\n    return 0;\n}',
+        'python': 'print("hello")',
+        'js': 'console.log("hello");'
     };
 
-    // Hàm cập nhật code khi đổi ngôn ngữ
     function updateEditor() {
         const lang = document.getElementById('lang').value;
         document.getElementById('code').value = templates[lang] || "";
     }
 
-    // Khởi tạo Pyodide
     async function init() {
         pyodide = await loadPyodide();
-        updateEditor(); // Load mẫu code mặc định
+        updateEditor(); // Load mẫu mặc định C++
         output.innerText = "Sẵn sàng!";
     }
     init();
@@ -62,6 +60,7 @@
         output.innerText = "Đang xử lý...";
 
         try {
+            // Xử lý C/C++ qua Wandbox
             if (lang === 'cpp' || lang === 'c') {
                 const response = await fetch('https://wandbox.org/api/compile.json', {
                     method: 'POST',
@@ -71,21 +70,23 @@
                 const data = await response.json();
                 output.innerText = data.compiler_error || data.program_error || data.program_output || "Hoàn thành.";
             } 
+            // Xử lý Python qua Pyodide
             else if (lang === 'python') {
                 try {
                     let result = await pyodide.runPythonAsync(code);
-                    output.innerText = (result !== undefined) ? result : "Đã thực thi Python thành công.";
+                    output.innerText = (result !== undefined) ? result : "Đã thực thi thành công.";
                 } catch (e) {
                     output.innerText = "Lỗi Python: " + e.message;
                 }
             }
+            // Xử lý JS trực tiếp
             else if (lang === 'js') {
                 let logs = [];
                 const oldLog = console.log;
                 console.log = (...args) => logs.push(args.join(" "));
                 try {
                     eval(code);
-                    output.innerText = logs.length > 0 ? logs.join("\n") : "Đã thực thi JS thành công.";
+                    output.innerText = logs.length > 0 ? logs.join("\n") : "Đã thực thi thành công.";
                 } catch (e) {
                     output.innerText = "Lỗi JS: " + e.message;
                 } finally {
@@ -93,7 +94,7 @@
                 }
             }
         } catch (e) {
-            output.innerText = "Lỗi kết nối: " + e.message;
+            output.innerText = "Lỗi hệ thống: " + e.message;
         }
     }
 </script>
