@@ -2,87 +2,126 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EZCompiler IDE</title>
+    <title>EZCompiler Pro</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
     <style>
-        :root { --bg: #1e1e1e; --panel: #252526; --text: #cccccc; --accent: #007acc; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Header */
-        header { background: var(--panel); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; }
-        .logo { font-weight: bold; color: #fff; font-size: 1.2em; }
-        
-        /* Main Layout */
-        main { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
-        #editor-container, #output-container { flex: 1; display: flex; flex-direction: column; background: var(--panel); border-radius: 6px; overflow: hidden; }
-        
-        /* Editor & Output */
-        textarea { flex: 1; background: transparent; color: #d4d4d4; border: none; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; }
-        #output { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-family: 'Consolas', monospace; color: #4ade80; }
-        
-        .title-bar { padding: 5px 15px; background: #333; font-size: 0.8em; color: #aaa; text-transform: uppercase; }
-        
-        /* Controls */
-        button { padding: 8px 20px; background: var(--accent); border: none; color: white; cursor: pointer; border-radius: 3px; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #005f9e; }
-        select { padding: 7px; background: #3c3c3c; color: white; border: 1px solid #555; border-radius: 3px; }
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-bg: #252526;
+            --accent-color: #007acc;
+            --text-color: #cccccc;
+            --border-color: #333333;
+        }
 
-        @media (max-width: 768px) { main { flex-direction: column; } }
+        body { 
+            margin: 0; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        .header { 
+            padding: 10px 20px; 
+            background: var(--panel-bg); 
+            display: flex; 
+            gap: 15px; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+
+        .container { display: flex; flex-direction: column; flex-grow: 1; padding: 10px; gap: 10px; }
+
+        textarea { 
+            width: 100%; 
+            height: 45vh; 
+            background: #121212; 
+            color: #dcdcdc; 
+            padding: 15px; 
+            border: 1px solid var(--border-color); 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            font-size: 14px;
+            resize: none; 
+            outline: none; 
+            border-radius: 5px;
+        }
+
+        #output { 
+            background: #000; 
+            color: #4ade80; 
+            padding: 15px; 
+            flex-grow: 1; 
+            border-radius: 5px;
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            border: 1px solid var(--border-color);
+        }
+
+        button { 
+            padding: 8px 20px; 
+            background: var(--accent-color); 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            font-weight: 600; 
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        button:hover { background: #005f9e; }
+        
+        select { 
+            padding: 8px; 
+            background: var(--panel-bg); 
+            color: white; 
+            border: 1px solid var(--border-color);
+            border-radius: 4px; 
+        }
+
+        .status { font-size: 0.8em; color: #888; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">EZCompiler IDE</div>
-    <div>
-        <select id="lang">
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-            <option value="python">Python</option>
-            <option value="js">JavaScript</option>
-        </select>
-        <button onclick="runCode()">Chạy Code ▶</button>
-    </div>
-</header>
+<div class="header">
+    <strong>EZCompiler</strong>
+    <select id="lang">
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="python">Python</option>
+        <option value="js">JavaScript</option>
+    </select>
+    <button onclick="runCode()" id="runBtn">Chạy Code ▶</button>
+    <span class="status" id="status">Sẵn sàng</span>
+</div>
 
-<main>
-    <div id="editor-container">
-        <div class="title-bar">Mã nguồn</div>
-        <textarea id="code" spellcheck="false" placeholder="Viết code ở đây..."></textarea>
-    </div>
-    <div id="output-container">
-        <div class="title-bar">Kết quả (Output)</div>
-        <div id="output">Sẵn sàng!</div>
-    </div>
-</main>
+<div class="container">
+    <textarea id="code" spellcheck="false" placeholder="Nhập code của bạn tại đây..."></textarea>
+    <div id="output">Kết quả sẽ hiển thị ở đây...</div>
+</div>
 
 <script>
     let pyodide = null;
     const output = document.getElementById('output');
-    const templates = {
-        'cpp': '#include <iostream>\n\nint main() {\n    std::cout << "hello";\n    return 0;\n}',
-        'c': '#include <stdio.h>\n\nint main() {\n    printf("hello");\n    return 0;\n}',
-        'python': 'print("hello")',
-        'js': 'console.log("hello");'
-    };
-
-    // Update code khi đổi ngôn ngữ
-    document.getElementById('lang').onchange = () => {
-        document.getElementById('code').value = templates[document.getElementById('lang').value];
-    };
+    const status = document.getElementById('status');
+    const runBtn = document.getElementById('runBtn');
 
     async function init() {
         pyodide = await loadPyodide();
-        document.getElementById('code').value = templates['cpp'];
-        output.innerText = "Trình biên dịch đã sẵn sàng.";
+        status.innerText = "Python đã tải xong";
     }
     init();
 
     async function runCode() {
         const lang = document.getElementById('lang').value;
         const code = document.getElementById('code').value;
-        output.innerText = "Đang xử lý...";
+        
+        runBtn.disabled = true;
+        status.innerText = "Đang chạy...";
+        output.innerText = "";
 
         try {
             if (lang === 'cpp' || lang === 'c') {
@@ -93,20 +132,37 @@
                 });
                 const data = await response.json();
                 output.innerText = data.compiler_error || data.program_error || data.program_output || "Hoàn thành.";
-            } else if (lang === 'python') {
+            } 
+            else if (lang === 'python') {
                 await pyodide.runPythonAsync(`import sys, io; sys.stdout = io.StringIO()`);
-                await pyodide.runPythonAsync(code);
-                output.innerText = await pyodide.runPythonAsync("sys.stdout.getvalue()");
-                await pyodide.runPythonAsync("sys.stdout = sys.__stdout__");
-            } else if (lang === 'js') {
+                try {
+                    await pyodide.runPythonAsync(code);
+                    output.innerText = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+                } catch (e) {
+                    output.innerText = "Lỗi Python: " + e.message;
+                } finally {
+                    await pyodide.runPythonAsync("sys.stdout = sys.__stdout__");
+                }
+            }
+            else if (lang === 'js') {
                 let logs = [];
                 const oldLog = console.log;
                 console.log = (...args) => logs.push(args.join(" "));
-                try { eval(code); output.innerText = logs.length > 0 ? logs.join("\n") : "Đã thực thi thành công."; } 
-                catch (e) { output.innerText = "Lỗi JS: " + e.message; }
-                finally { console.log = oldLog; }
+                try {
+                    eval(code);
+                    output.innerText = logs.length > 0 ? logs.join("\n") : "Đã thực thi thành công.";
+                } catch (e) {
+                    output.innerText = "Lỗi JS: " + e.message;
+                } finally {
+                    console.log = oldLog;
+                }
             }
-        } catch (e) { output.innerText = "Lỗi hệ thống: " + e.message; }
+        } catch (e) {
+            output.innerText = "Lỗi kết nối: " + e.message;
+        } finally {
+            runBtn.disabled = false;
+            status.innerText = "Hoàn thành";
+        }
     }
 </script>
 </body>
