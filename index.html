@@ -121,11 +121,11 @@
     <div class="controls">
         <label for="language">Ngôn ngữ:</label>
         <select id="language" onchange="updateEditor()">
-            <option value="cpp">C++ (GCC)</option>
-            <option value="c">C (GCC)</option>
-            <option value="java">Java (OpenJDK)</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="java">Java</option>
             <option value="python">Python 3</option>
-            <option value="javascript">JavaScript (Node.js)</option>
+            <option value="javascript">JavaScript</option>
         </select>
         <button onclick="runCode()">Chạy Code ▶</button>
     </div>
@@ -156,7 +156,6 @@
     function updateEditor() {
         const lang = document.getElementById('language').value;
         document.getElementById('code').value = templates[lang];
-        // Reset trạng thái ô output về ban đầu
         document.getElementById('output').classList.remove('error-text');
         document.getElementById('output').innerText = 'Nhấn "Chạy Code ▶" để xem kết quả thực thi...';
     }
@@ -176,7 +175,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     language: langValue,
-                    version: "*", // Tự động lấy phiên bản mới nhất có sẵn trên hệ thống Piston
+                    version: "*", 
                     files: [{ content: codeText }]
                 })
             });
@@ -195,7 +194,7 @@
                 } 
                 // Mã chạy thành công hoàn toàn nhưng bản thân mã không ra lệnh in/xuất dữ liệu gì
                 else {
-                    outputDiv.innerText = "Chương trình đã thực thi thành công (Mã trả về: " + data.run.code + ") nhưng không có dữ liệu output.";
+                    outputDiv.innerText = "Chương trình đã thực thi thành công nhưng không có dữ liệu output.";
                 }
             } else {
                 outputDiv.classList.add('error-text');
@@ -207,7 +206,7 @@
         }
     }
 
-    // Tự động nạp mã C++ mẫu ngay khi trang web vừa tải xong
+    // Tự động nạp mã mẫu ngay khi trang web vừa tải xong
     window.onload = updateEditor;
 </script>
 
