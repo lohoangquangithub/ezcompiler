@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>EZCompiler | Full Integrated IDE</title>
+    <title>EZCompiler | Auto-Switch Mode</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
@@ -23,7 +23,6 @@
         textarea#stdin { height: 200px; background: #121212; color: #fff; border: 1px solid var(--border); padding: 10px; resize: vertical; font-family: monospace; }
         #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
         button { padding: 8px 15px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; }
-        button:hover { background: #00a845; }
         .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -61,7 +60,6 @@
     const status = document.getElementById('status');
     const loader = document.getElementById('loader');
 
-    // Thư viện mẫu
     const templates = {
         cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello C++!" << std::endl;\n    return 0;\n}`,
         c: `#include <stdio.h>\n\nint main() {\n    printf("Hello C!\\n");\n    return 0;\n}`,
@@ -69,7 +67,6 @@
         javascript: `console.log("Hello JavaScript!");\n\n// Nhập liệu:\n// console.log("Code JS ở đây");`
     };
 
-    // Khởi tạo Editor
     let editor = CodeMirror(document.getElementById("editor"), {
         value: localStorage.getItem('code') || templates['cpp'],
         mode: "text/x-c++src",
@@ -77,22 +74,19 @@
         lineNumbers: true
     });
 
-    // Cập nhật Mode VÀ Nội dung mẫu khi chọn Language
+    // Hàm auto-switch: Thay đổi ngôn ngữ và load code mẫu ngay lập tức
     function updateMode() {
         const lang = document.getElementById('lang').value;
         const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
         
-        // 1. Cập nhật Syntax Highlighting
+        // 1. Đổi Syntax Highlighting
         editor.setOption("mode", modes[lang]);
         
-        // 2. Tự động cập nhật code mẫu (có xác nhận)
-        if (confirm("Chuyển ngôn ngữ sang " + lang.toUpperCase() + "? Code hiện tại sẽ bị thay thế bằng mẫu mới.")) {
-            editor.setValue(templates[lang]);
-            localStorage.setItem('code', templates[lang]);
-        }
+        // 2. Tự động áp dụng code mẫu NGAY LẬP TỨC (Không dùng confirm)
+        editor.setValue(templates[lang]);
+        localStorage.setItem('code', templates[lang]);
     }
 
-    // Auto-save
     editor.on('change', () => {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
@@ -111,10 +105,8 @@
         const lang = document.getElementById('lang').value;
         const code = editor.getValue();
         const input = document.getElementById('stdin').value;
-        
         loader.style.display = 'flex';
         output.innerText = "";
-
         try {
             if (lang === 'cpp' || lang === 'c') {
                 const response = await fetch('https://wandbox.org/api/compile.json', {
