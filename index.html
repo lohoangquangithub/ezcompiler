@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>EZCompiler | Fixed Version</title>
+    <title>EZCompiler | Measure & TLE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
@@ -24,6 +24,7 @@
         #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
         button { padding: 8px 15px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; }
         .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; }
+        .time-badge { color: #aaa; font-size: 0.8em; margin-left: auto; }
     </style>
 </head>
 <body>
@@ -38,6 +39,7 @@
         <option value="javascript">JavaScript</option>
     </select>
     <button onclick="runCode()">Chạy Code ▶</button>
+    <div id="time-display" class="time-badge"></div>
 </div>
 
 <div class="main">
@@ -53,11 +55,12 @@
 </div>
 
 <script>
-    // BỌC TOÀN BỘ LOGIC VÀO ĐÂY ĐỂ ĐẢM BẢO HTML ĐÃ LOAD XONG
     document.addEventListener('DOMContentLoaded', () => {
         let pyodide = null;
         const output = document.getElementById('output');
         const loader = document.getElementById('loader');
+        const timeDisplay = document.getElementById('time-display');
+        const TLE_LIMIT = 2000; // Giới hạn 2 giây
 
         const templates = {
             cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello C++!" << std::endl;\n    return 0;\n}`,
@@ -68,7 +71,6 @@
 
         const modes = { cpp: "text/x-c++src", c: "text/x-csrc", python: "python", javascript: "javascript" };
 
-        // Khởi tạo Editor
         let editor = CodeMirror(document.getElementById("editor"), {
             value: templates['cpp'],
             mode: modes['cpp'],
@@ -76,27 +78,30 @@
             lineNumbers: true
         });
 
-        // Lắng nghe sự kiện đổi ngôn ngữ
         document.getElementById('lang').addEventListener('change', function() {
             const lang = this.value;
             editor.setOption("mode", modes[lang]);
             editor.setValue(templates[lang]);
         });
 
-        // Init Pyodide
         async function init() {
             pyodide = await loadPyodide();
         }
         init();
 
-        // Gán hàm runCode vào window để nút bấm có thể gọi tới
         window.runCode = async function() {
             const lang = document.getElementById('lang').value;
             const code = editor.getValue();
             const input = document.getElementById('stdin').value;
+            
             loader.style.display = 'flex';
             output.innerText = "";
+            timeDisplay.innerText = "Đang chạy...";
+            
+            const startTime = performance.now(); // Bắt đầu tính giờ
+
             try {
+                let result = "";
                 if (lang === 'cpp' || lang === 'c') {
                     const response = await fetch('https://wandbox.org/api/compile.json', {
                         method: 'POST',
@@ -104,25 +109,41 @@
                         body: JSON.stringify({ compiler: 'gcc-head', code: code, stdin: input, save: false })
                     });
                     const data = await response.json();
-                    output.innerText = data.compiler_error || data.program_error || data.program_output || "Hoàn thành.";
+                    result = data.compiler_error || data.program_error || data.program_output || "Hoàn thành.";
                 } 
                 else if (lang === 'python') {
                     await pyodide.runPythonAsync(`import sys, io; sys.stdin = io.StringIO("""${input.replace(/"/g, '\\"')}"""); sys.stdout = io.StringIO()`);
                     try {
                         await pyodide.runPythonAsync(code);
-                        output.innerText = await pyodide.runPythonAsync("sys.stdout.getvalue()");
-                    } catch (e) { output.innerText = "Lỗi: " + e.message; }
+                        result = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+                    } catch (e) { result = "Lỗi: " + e.message; }
                 }
                 else if (lang === 'javascript') {
                     let logs = [];
                     const oldLog = console.log;
                     console.log = (...args) => logs.push(args.join(" "));
-                    try { eval(code); output.innerText = logs.length > 0 ? logs.join("\n") : "Thực thi thành công."; } 
-                    catch (e) { output.innerText = "Lỗi: " + e.message; } 
+                    try { eval(code); result = logs.length > 0 ? logs.join("\n") : "Thực thi thành công."; } 
+                    catch (e) { result = "Lỗi: " + e.message; } 
                     finally { console.log = oldLog; }
                 }
-            } catch (e) { output.innerText = "Lỗi: " + e.message; } 
-            finally { loader.style.display = 'none'; }
+
+                const endTime = performance.now(); // Kết thúc tính giờ
+                const duration = (endTime - startTime).toFixed(2);
+                
+                // Kiểm tra TLE
+                if (duration > TLE_LIMIT) {
+                    output.innerText = `[TLE] Thời gian thực thi quá lâu!\nĐã dừng lại sau: ${duration}ms (Giới hạn: ${TLE_LIMIT}ms)\n\n--- Nội dung ---\n${result}`;
+                    timeDisplay.innerText = `${duration}ms (TLE!)`;
+                } else {
+                    output.innerText = result;
+                    timeDisplay.innerText = `Thời gian: ${duration}ms`;
+                }
+
+            } catch (e) { 
+                output.innerText = "Lỗi hệ thống: " + e.message; 
+            } finally { 
+                loader.style.display = 'none'; 
+            }
         }
     });
 </script>
