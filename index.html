@@ -5,113 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EZCompiler - Piston Engine</title>
     <style>
-        body { 
-            margin: 0; 
-            background: #0b0f19; 
-            color: #fff; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        header { 
-            background: #1a202c; 
-            padding: 10px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 2px solid #2d3748; 
-        }
-        .logo { 
-            font-size: 22px; 
-            font-weight: bold; 
-            color: #48bb78; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-        }
+        body { margin: 0; background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        header { background: #1a202c; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2d3748; }
+        .logo { font-size: 22px; font-weight: bold; color: #48bb78; display: flex; align-items: center; gap: 5px; }
         .logo span { color: #fff; }
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .controls { display: flex; align-items: center; gap: 15px; }
         label { font-size: 14px; color: #a0aec0; }
-        select { 
-            padding: 8px 12px; 
-            background: #2d3748; 
-            color: white; 
-            border: 1px solid #4a5568; 
-            border-radius: 4px; 
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-        }
-        button { 
-            padding: 8px 18px; 
-            background: #00c853; 
-            color: white; 
-            border: none;
-            border-radius: 4px; 
-            font-weight: bold; 
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.2s; 
-        }
-        button:hover { 
-            background: #00e676; 
-        }
-        .main-container { 
-            display: flex; 
-            flex: 1; 
-            overflow: hidden; 
-            padding: 15px; 
-            gap: 15px; 
-        }
-        .panel { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background: #121212;
-            border: 1px solid #2d3748; 
-            border-radius: 6px; 
-            overflow: hidden; 
-        }
-        .panel-header { 
-            padding: 10px 15px; 
-            background: #1a202c; 
-            font-size: 12px; 
-            color: #a0aec0; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            border-bottom: 1px solid #2d3748;
-        }
-        textarea { 
-            flex: 1; 
-            background: #090d16; 
-            color: #38bdf8; 
-            padding: 15px; 
-            border: none; 
-            outline: none; 
-            font-family: 'Consolas', 'Courier New', monospace; 
-            font-size: 14px; 
-            resize: none; 
-            line-height: 1.5;
-        }
-        #output { 
-            flex: 1; 
-            background: #090d16; 
-            color: #4ade80; 
-            padding: 15px; 
-            overflow-y: auto; 
-            white-space: pre-wrap; 
-            font-family: 'Consolas', 'Courier New', monospace; 
-            font-size: 14px; 
-            line-height: 1.5;
-        }
-        .error-text {
-            color: #f87171 !important;
-        }
+        select { padding: 8px 12px; background: #2d3748; color: white; border: 1px solid #4a5568; border-radius: 4px; font-size: 14px; outline: none; cursor: pointer; }
+        button { padding: 8px 18px; background: #00c853; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #00e676; }
+        .main-container { display: flex; flex: 1; overflow: hidden; padding: 15px; gap: 15px; }
+        .panel { flex: 1; display: flex; flex-direction: column; background: #121212; border: 1px solid #2d3748; border-radius: 6px; overflow: hidden; }
+        .panel-header { padding: 10px 15px; background: #1a202c; font-size: 12px; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #2d3748; }
+        textarea { flex: 1; background: #090d16; color: #38bdf8; padding: 15px; border: none; outline: none; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; resize: none; line-height: 1.5; }
+        #output { flex: 1; background: #090d16; color: #4ade80; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; line-height: 1.5; }
+        .error-text { color: #f87171 !important; }
     </style>
 </head>
 <body>
@@ -143,7 +51,6 @@
 </div>
 
 <script>
-    // 1. Danh sách mã nguồn mẫu tương ứng từng ngôn ngữ
     const templates = {
         'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào từ EZCompiler!" << endl;\n    int a = 5, b = 10;\n    cout << "Tong la: " << a + b << endl;\n    return 0;\n}',
         'c': '#include <stdio.h>\n\nint main() {\n    printf("Xin chào từ EZCompiler!\\n");\n    int a = 5, b = 10;\n    printf("Tong la: %d\\n", a + b);\n    return 0;\n}',
@@ -152,7 +59,15 @@
         'javascript': 'console.log("Xin chào từ EZCompiler!");\nlet a = 5, b = 10;\nconsole.log("Tong la:", a + b);'
     };
 
-    // 2. Hàm tự động đổi code khi thay đổi menu ngôn ngữ
+    // BẢN VÁ LỖI: Cung cấp chính xác phiên bản mà Piston API (emkc.org) đang cài đặt
+    const languageVersions = {
+        'cpp': '10.2.0',
+        'c': '10.2.0',
+        'java': '15.0.2',
+        'python': '3.10.0',
+        'javascript': '18.15.0'
+    };
+
     function updateEditor() {
         const lang = document.getElementById('language').value;
         document.getElementById('code').value = templates[lang];
@@ -160,7 +75,6 @@
         document.getElementById('output').innerText = 'Nhấn "Chạy Code ▶" để xem kết quả thực thi...';
     }
 
-    // 3. Hàm gọi API Piston xử lý biên dịch và hiển thị kết quả
     async function runCode() {
         const outputDiv = document.getElementById('output');
         const codeText = document.getElementById('code').value;
@@ -175,7 +89,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     language: langValue,
-                    version: "*", 
+                    version: languageVersions[langValue], // Sử dụng phiên bản chuẩn đã khai báo
                     files: [{ content: codeText }]
                 })
             });
@@ -183,20 +97,21 @@
             const data = await response.json();
 
             if (data.run) {
-                // Trường hợp có lỗi cú pháp hoặc lỗi runtime (stderr)
                 if (data.run.stderr) {
                     outputDiv.classList.add('error-text');
                     outputDiv.innerText = data.run.stderr;
-                } 
-                // Trường hợp chạy thành công xuất ra kết quả chuẩn (stdout)
-                else if (data.run.stdout) {
+                } else if (data.run.stdout) {
                     outputDiv.innerText = data.run.stdout;
-                } 
-                // Mã chạy thành công hoàn toàn nhưng bản thân mã không ra lệnh in/xuất dữ liệu gì
-                else {
+                } else {
                     outputDiv.innerText = "Chương trình đã thực thi thành công nhưng không có dữ liệu output.";
                 }
-            } else {
+            } 
+            // Đọc thông báo lỗi trực tiếp từ Piston API (nếu có)
+            else if (data.message) {
+                outputDiv.classList.add('error-text');
+                outputDiv.innerText = "Lỗi từ máy chủ Piston: " + data.message;
+            } 
+            else {
                 outputDiv.classList.add('error-text');
                 outputDiv.innerText = "Lỗi phản hồi hệ thống: Không thể đọc cấu trúc dữ liệu từ máy chủ.";
             }
@@ -206,7 +121,6 @@
         }
     }
 
-    // Tự động nạp mã mẫu ngay khi trang web vừa tải xong
     window.onload = updateEditor;
 </script>
 
