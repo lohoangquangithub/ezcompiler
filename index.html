@@ -2,9 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EZCompiler | Full Integrated IDE</title>
-    
+    <title>EZCompiler | All-in-One IDE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css">
@@ -25,7 +23,6 @@
         textarea#stdin { height: 200px; background: #121212; color: #fff; border: 1px solid var(--border); padding: 10px; resize: vertical; font-family: monospace; }
         #output { background: #000; color: #4ade80; padding: 15px; flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid var(--border); }
         button { padding: 8px 15px; background: var(--accent); border: none; color: white; cursor: pointer; font-weight: bold; border-radius: 4px; }
-        button:hover { background: #00a845; }
         button.secondary { background: #555; }
         .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; justify-content: center; align-items: center; }
     </style>
@@ -65,15 +62,15 @@
     const status = document.getElementById('status');
     const loader = document.getElementById('loader');
 
-    // 1. Templates mẫu
+    // Thư viện mẫu (Templates)
     const templates = {
-        cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}`,
-        c: `#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}`,
-        python: `print("Hello, World!")\n\n# Nhập liệu:\n# n = input()\n# print(f"Bạn đã nhập: {n}")`,
-        javascript: `console.log("Hello, World!");\n\n// Nhập liệu:\n// console.log("Code ở đây");`
+        cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello World!" << std::endl;\n    return 0;\n}`,
+        c: `#include <stdio.h>\n\nint main() {\n    printf("Hello World!\\n");\n    return 0;\n}`,
+        python: `print("Hello World!")\n\n# Nhập liệu từ stdin:\n# n = input()\n# print(f"Bạn đã nhập: {n}")`,
+        javascript: `console.log("Hello World!");\n\n// Nhập liệu:\n// console.log("Code JS ở đây");`
     };
 
-    // 2. Khởi tạo Editor
+    // Khởi tạo Editor
     let editor = CodeMirror(document.getElementById("editor"), {
         value: localStorage.getItem('code') || templates['cpp'],
         mode: "text/x-c++src",
@@ -81,7 +78,7 @@
         lineNumbers: true
     });
 
-    // Tự động lưu
+    // Auto-save với Debounce
     editor.on('change', () => {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
@@ -90,12 +87,11 @@
         }, 1000);
     });
 
-    // Hàm load mẫu
+    // Tải Template
     function loadTemplate() {
         const lang = document.getElementById('lang').value;
-        if (confirm("Tải code mẫu sẽ ghi đè code hiện tại. Bạn có chắc không?")) {
+        if (confirm("Ghi đè code hiện tại bằng mẫu khởi đầu?")) {
             editor.setValue(templates[lang]);
-            localStorage.setItem('code', templates[lang]);
         }
     }
 
@@ -111,6 +107,7 @@
         editor.setOption("mode", modes[lang]);
     }
 
+    // Logic Run Code
     async function runCode() {
         const lang = document.getElementById('lang').value;
         const code = editor.getValue();
@@ -134,17 +131,17 @@
                 try {
                     await pyodide.runPythonAsync(code);
                     output.innerText = await pyodide.runPythonAsync("sys.stdout.getvalue()");
-                } catch (e) { output.innerText = "Lỗi: " + e.message; }
+                } catch (e) { output.innerText = "Lỗi Python: " + e.message; }
             }
             else if (lang === 'javascript') {
                 let logs = [];
                 const oldLog = console.log;
                 console.log = (...args) => logs.push(args.join(" "));
                 try { eval(code); output.innerText = logs.length > 0 ? logs.join("\n") : "Thực thi thành công."; } 
-                catch (e) { output.innerText = "Lỗi: " + e.message; } 
+                catch (e) { output.innerText = "Lỗi JS: " + e.message; } 
                 finally { console.log = oldLog; }
             }
-        } catch (e) { output.innerText = "Lỗi: " + e.message; } 
+        } catch (e) { output.innerText = "Lỗi kết nối: " + e.message; } 
         finally { loader.style.display = 'none'; }
     }
 </script>
